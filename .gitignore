@@ -1,0 +1,16 @@
+# Ignore compiled class files
+*.class
+
+# Ignore IntelliJ project files
+.idea/
+
+# Ignore Maven build output
+target/
+
+# Ignore log files
+*.log
+
+# Ignore build artifacts
+build/
+out/
+
