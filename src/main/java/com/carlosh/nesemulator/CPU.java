@@ -47,7 +47,14 @@ public class CPU {
    * Status register flags, each one is a bit.
    */
   public enum StatusFlag {
-    C(0), Z(1), I(2), D(3), B(4), U(5), V(6), N(7);
+    C(0), // Carry
+    Z(1), // Zero
+    I(2), // Interrupt
+    D(3), // Decimal
+    B(4), // Break
+    U(5), // Unused
+    V(6), // Overflow
+    N(7); // Negative
 
     private final int bit;
 
@@ -78,7 +85,7 @@ public class CPU {
   int pc = 0x0000;  // Program counter
 
   private int getStatusFlag(StatusFlag flag) {
-    return flag.bit;
+    return (status >> flag.bit) & 1;
   }
 
   private void setStatusFlag(StatusFlag flag, int value) {
@@ -190,8 +197,31 @@ public class CPU {
   }
 
   // Opcodes
+
+  /**
+   * Addition.
+   *
+   * @return 1
+   */
   public int ADC() {
-    return 0;
+    int val = fetch();
+    // Call the add helper method with the fetched value.
+    add(val);
+    return 1;
+  }
+
+  private void add(int val) {
+    int added = a + val + getStatusFlag(StatusFlag.C);
+    // Set carry flag if result is greater than 255
+    setStatusFlag(StatusFlag.C, added > 255 ? 1 : 0);
+    // Set zero flag if the first 8 bits are 0
+    setStatusFlag(StatusFlag.Z, (added & 0x00FF) == 0 ? 1 : 0);
+    // Set negative flag if the first bit is 1
+    setStatusFlag(StatusFlag.N, added & 0x80);
+    // Set overflow flag if the sign of a and val are the same and the sign of a and added are different
+    boolean overflow = (((a ^ added) & 0x80) != 0) && (((a ^ val) & 0x80) == 0);
+    setStatusFlag(StatusFlag.V, overflow ? 1 : 0);
+    a = added & 0x00FF;
   }
 
   /**
@@ -245,23 +275,76 @@ public class CPU {
     return 0;
   }
 
+  /**
+   * Branch if equal.
+   *
+   * @return 0
+   */
   public int BEQ() {
+    if (getStatusFlag(StatusFlag.Z) == 1) {
+      cycles++;
+      address_abs = pc + address_rel;
+      if ((pc & 0xFF00) != (address_abs & 0xFF00)) {
+        cycles++;
+      }
+      pc = address_abs;
+    }
     return 0;
   }
+
 
   public int BIT() {
     return 0;
   }
 
+  /**
+   * Branch if negative.
+   *
+   * @return 0
+   */
   public int BMI() {
+    if (getStatusFlag(StatusFlag.N) == 1) {
+      cycles++;
+      address_abs = pc + address_rel;
+      if ((pc & 0xFF00) != (address_abs & 0xFF00)) {
+        cycles++;
+      }
+      pc = address_abs;
+    }
     return 0;
   }
 
+  /**
+   * Branch if not equal.
+   *
+   * @return 0
+   */
   public int BNE() {
+    if (getStatusFlag(StatusFlag.Z) == 0) {
+      cycles++;
+      address_abs = pc + address_rel;
+      if ((pc & 0xFF00) != (address_abs & 0xFF00)) {
+        cycles++;
+      }
+      pc = address_abs;
+    }
     return 0;
   }
 
+  /**
+   * Branch if positive.
+   *
+   * @return 0
+   */
   public int BPL() {
+    if (getStatusFlag(StatusFlag.N) == 0) {
+      cycles++;
+      address_abs = pc + address_rel;
+      if ((pc & 0xFF00) != (address_abs & 0xFF00)) {
+        cycles++;
+      }
+      pc = address_abs;
+    }
     return 0;
   }
 
@@ -269,27 +352,77 @@ public class CPU {
     return 0;
   }
 
+  /**
+   * Branch if not overflowed.
+   *
+   * @return 0
+   */
   public int BVC() {
+    if (getStatusFlag(StatusFlag.V) == 0) {
+      cycles++;
+      address_abs = pc + address_rel;
+      if ((pc & 0xFF00) != (address_abs & 0xFF00)) {
+        cycles++;
+      }
+      pc = address_abs;
+    }
     return 0;
   }
 
+  /**
+   * Branch if overflowed.
+   *
+   * @return 0
+   */
   public int BVS() {
+    if (getStatusFlag(StatusFlag.V) == 1) {
+      cycles++;
+      address_abs = pc + address_rel;
+      if ((pc & 0xFF00) != (address_abs & 0xFF00)) {
+        cycles++;
+      }
+      pc = address_abs;
+    }
     return 0;
   }
 
+  /**
+   * Clear the carry bit.
+   *
+   * @return 0
+   */
   public int CLC() {
+    setStatusFlag(StatusFlag.C, 0);
     return 0;
   }
 
+  /**
+   * Clear the decimal bit.
+   *
+   * @return 0
+   */
   public int CLD() {
+    setStatusFlag(StatusFlag.D, 0);
     return 0;
   }
 
+  /**
+   * Clear the interrupts bit.
+   *
+   * @return 0
+   */
   public int CLI() {
+    setStatusFlag(StatusFlag.I, 0);
     return 0;
   }
 
+  /**
+   * Clear the overflow bit.
+   *
+   * @return 0
+   */
   public int CLV() {
+    setStatusFlag(StatusFlag.V, 0);
     return 0;
   }
 
@@ -365,7 +498,13 @@ public class CPU {
     return 0;
   }
 
+  /**
+   * Write the accumulator to the stack.
+   *
+   * @return 0
+   */
   public int PHA() {
+    write((0x0100 + stkPtr--), a);
     return 0;
   }
 
@@ -373,7 +512,15 @@ public class CPU {
     return 0;
   }
 
+  /**
+   * Pop the accumulator from the stack.
+   *
+   * @return 0
+   */
   public int PLA() {
+    a = read(0x0100 + ++stkPtr);
+    setStatusFlag(StatusFlag.Z, a == 0x00 ? 1 : 0);
+    setStatusFlag(StatusFlag.N, (a & 0x80) != 0 ? 1 : 0);
     return 0;
   }
 
@@ -397,8 +544,16 @@ public class CPU {
     return 0;
   }
 
+  /**
+   * Subtraction.
+   *
+   * @return 1
+   */
   public int SBC() {
-    return 0;
+    int val = fetch() ^ 0x00FF;
+    // Call the add helper method with the inverse of the fetched value.
+    add(val);
+    return 1;
   }
 
   public int SEC() {
@@ -472,13 +627,50 @@ public class CPU {
     cycles--;
   }
 
+  /**
+   * Reset the CPU.
+   */
   public void reset() {
+    a = 0x00;
+    x = 0x00;
+    y = 0x00;
+    stkPtr = 0xFD;
+    status = 0x00;
+    pc = (read(0xFFFD) << 8) | read(0xFFFC);
+    address_abs = 0x0000;
+    address_rel = 0x00;
+    fetched = 0x00;
+    cycles = 8;
   }
 
+  /**
+   * Interrupt request received. Only execute if the 'ignore interrupts' bit is not set.
+   */
   public void interruptRequest() {
+    if (getStatusFlag(StatusFlag.I) == 0) {
+      write((0x0100 + stkPtr--), (pc >> 8) & 0x00FF);
+      write((0x0100 + stkPtr--), pc & 0x00FF);
+      setStatusFlag(StatusFlag.B, 0);
+      setStatusFlag(StatusFlag.U, 1);
+      setStatusFlag(StatusFlag.I, 1);
+      write((0x0100 + stkPtr--), status);
+      pc = (read(0xFFFF) << 8) | read(0xFFFE);
+      cycles = 7;
+    }
   }
 
+  /**
+   * Non-maskable interrupt request received. Execute regardless of the 'ignore interrupts' bit.
+   */
   public void nonMaskableInterruptRequest() {
+    write((0x0100 + stkPtr--), (pc >> 8) & 0x00FF);
+    write((0x0100 + stkPtr--), pc & 0x00FF);
+    setStatusFlag(StatusFlag.B, 0);
+    setStatusFlag(StatusFlag.U, 1);
+    setStatusFlag(StatusFlag.I, 1);
+    write((0x0100 + stkPtr--), status);
+    pc = (read(0xFFFB) << 8) | read(0xFFFA);
+    cycles = 8;
   }
 
   /**
