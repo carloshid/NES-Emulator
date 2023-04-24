@@ -50,7 +50,15 @@ public class Bus {
   }
 
   public void clock() {
-    //cpu.clock();
+    ppu.clock();
+    if (clockCounter % 3 == 0) {
+      try {
+        cpu.clockCycle();
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    }
+    clockCounter++;
   }
 
 

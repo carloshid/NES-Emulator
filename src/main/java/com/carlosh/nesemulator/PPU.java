@@ -38,8 +38,8 @@ public class PPU {
     this.rom = rom;
   }
 
+  // TODO
   public void clock() {
-
   }
 
 }

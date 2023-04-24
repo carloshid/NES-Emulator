@@ -3,6 +3,9 @@ package com.carlosh.nesemulator;
 public class Main {
 
   public static void main(String[] args) {
-    System.out.println("Hello World!");
+    ROM rom = new ROM("filename"); // Change to the filename of the rom file
+    Bus bus = new Bus();
+    bus.addROM(rom);
+    bus.reset();
   }
 }
