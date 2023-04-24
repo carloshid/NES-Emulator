@@ -237,7 +237,21 @@ public class CPU {
     return 1;
   }
 
+  /**
+   * Arithmetic shift left.
+   *
+   * @return 0
+   */
   public int ASL() {
+    int value = fetch() << 1;
+    setStatusFlag(StatusFlag.C, (value & 0xFF00) > 0 ? 1 : 0);
+    setStatusFlag(StatusFlag.Z, (value & 0x00FF) == 0 ? 1 : 0);
+    setStatusFlag(StatusFlag.N, value & 0x80);
+    if (lookup[opcode].addressMode == (Callable) this::IMP) {
+      a = value & 0x00FF;
+    } else {
+      write(address_abs, value & 0x00FF);
+    }
     return 0;
   }
 
@@ -292,8 +306,16 @@ public class CPU {
     return 0;
   }
 
-
+  /**
+   * Bit test.
+   *
+   * @return 0.
+   */
   public int BIT() {
+    int value = a & fetch();
+    setStatusFlag(StatusFlag.Z, (value & 0x00FF) == 0 ? 1 : 0);
+    setStatusFlag(StatusFlag.N, value & (1 << 7));
+    setStatusFlag(StatusFlag.V, value & (1 << 6));
     return 0;
   }
 
@@ -348,7 +370,19 @@ public class CPU {
     return 0;
   }
 
+  /**
+   * Break / Interrupt.
+   *
+   * @return 0
+   */
   public int BRK() {
+    setStatusFlag(StatusFlag.I, 1);
+    write(0x0100 + stkPtr--, (++pc >> 8) & 0x00FF);
+    write(0x0100 + stkPtr--, pc & 0x00FF);
+    setStatusFlag(StatusFlag.B, 1);
+    write(0x0100 + stkPtr--, status);
+    setStatusFlag(StatusFlag.B, 0);
+    pc = (read(0xFFFE) | (read(0xFFFF) << 8));
     return 0;
   }
 
@@ -426,80 +460,233 @@ public class CPU {
     return 0;
   }
 
+  /**
+   * Compare with accumulator.
+   *
+   * @return 1
+   */
   public int CMP() {
-    return 0;
+    int value = a - fetch();
+    setStatusFlag(StatusFlag.C, a >= value ? 1 : 0);
+    setStatusFlag(StatusFlag.Z, (value & 0x00FF) == 0 ? 1 : 0);
+    setStatusFlag(StatusFlag.N, value & (1 << 7));
+    return 1;
   }
 
+  /**
+   * Compare with X register.
+   *
+   * @return 0
+   */
   public int CPX() {
-    return 0;
-  }
-
-  public int CPY() {
-    return 0;
-  }
-
-  public int DEC() {
-    return 0;
-  }
-
-  public int DEX() {
-    return 0;
-  }
-
-  public int DEY() {
-    return 0;
-  }
-
-  public int EOR() {
-    return 0;
-  }
-
-  public int INC() {
-    return 0;
-  }
-
-  public int INX() {
-    return 0;
-  }
-
-  public int INY() {
-    return 0;
-  }
-
-  public int JMP() {
-    return 0;
-  }
-
-  public int JSR() {
-    return 0;
-  }
-
-  public int LDA() {
-    return 0;
-  }
-
-  public int LDX() {
-    return 0;
-  }
-
-  public int LDY() {
-    return 0;
-  }
-
-  public int LSR() {
-    return 0;
-  }
-
-  public int NOP() {
-    return 0;
-  }
-
-  public int ORA() {
+    int value = x - fetch();
+    setStatusFlag(StatusFlag.C, x >= value ? 1 : 0);
+    setStatusFlag(StatusFlag.Z, (value & 0x00FF) == 0 ? 1 : 0);
+    setStatusFlag(StatusFlag.N, value & (1 << 7));
     return 0;
   }
 
   /**
-   * Write the accumulator to the stack.
+   * Compare with Y register.
+   *
+   * @return 0
+   */
+  public int CPY() {
+    int value = y - fetch();
+    setStatusFlag(StatusFlag.C, y >= value ? 1 : 0);
+    setStatusFlag(StatusFlag.Z, (value & 0x00FF) == 0 ? 1 : 0);
+    setStatusFlag(StatusFlag.N, value & (1 << 7));
+    return 0;
+  }
+
+  /**
+   * Decrement.
+   *
+   * @return 0
+   */
+  public int DEC() {
+    int value = fetch() - 1;
+    write(address_abs, value & 0x00FF);
+    setStatusFlag(StatusFlag.Z, (value & 0x00FF) == 0 ? 1 : 0);
+    setStatusFlag(StatusFlag.N, value & (1 << 7));
+    return 0;
+  }
+
+  /**
+   * Decrement X.
+   *
+   * @return 0
+   */
+  public int DEX() {
+    x--;
+    setStatusFlag(StatusFlag.Z, x == 0 ? 1 : 0);
+    setStatusFlag(StatusFlag.N, x & (1 << 7));
+    return 0;
+  }
+
+  /**
+   * Decrement Y.
+   *
+   * @return 0
+   */
+  public int DEY() {
+    y--;
+    setStatusFlag(StatusFlag.Z, y == 0 ? 1 : 0);
+    setStatusFlag(StatusFlag.N, y & (1 << 7));
+    return 0;
+  }
+
+  /**
+   * Exclusive OR (with accumulator).
+   *
+   * @return 1
+   */
+  public int EOR() {
+    a = a ^ fetch();
+    setStatusFlag(StatusFlag.Z, a == 0 ? 1 : 0);
+    setStatusFlag(StatusFlag.N, a & (1 << 7));
+    return 1;
+  }
+
+  /**
+   * Increment.
+   *
+   * @return 0
+   */
+  public int INC() {
+    int value = fetch() + 1;
+    write(address_abs, value & 0x00FF);
+    setStatusFlag(StatusFlag.Z, (value & 0x00FF) == 0 ? 1 : 0);
+    setStatusFlag(StatusFlag.N, value & (1 << 7));
+    return 0;
+  }
+
+  /**
+   * Increment X.
+   *
+   * @return 0
+   */
+  public int INX() {
+    x++;
+    setStatusFlag(StatusFlag.Z, x == 0 ? 1 : 0);
+    setStatusFlag(StatusFlag.N, x & (1 << 7));
+    return 0;
+  }
+
+  /**
+   * Increment Y.
+   *
+   * @return 0
+   */
+  public int INY() {
+    y++;
+    setStatusFlag(StatusFlag.Z, y == 0 ? 1 : 0);
+    setStatusFlag(StatusFlag.N, y & (1 << 7));
+    return 0;
+  }
+
+  /**
+   * Jump.
+   *
+   * @return 0
+   */
+  public int JMP() {
+    pc = address_abs;
+    return 0;
+  }
+
+  /**
+   * Jump subroutine.
+   *
+   * @return 0
+   */
+  public int JSR() {
+    write(0x0100 + stkPtr--, (--pc >> 8) & 0x00FF);
+    write(0x0100 + stkPtr--, pc & 0x00FF);
+    pc = address_abs;
+    return 0;
+  }
+
+  /**
+   * Load accumulator.
+   *
+   * @return 1
+   */
+  public int LDA() {
+    a = fetch();
+    setStatusFlag(StatusFlag.Z, a == 0 ? 1 : 0);
+    setStatusFlag(StatusFlag.N, a & (1 << 7));
+    return 1;
+  }
+
+  /**
+   * Load X.
+   *
+   * @return 1
+   */
+  public int LDX() {
+    x = fetch();
+    setStatusFlag(StatusFlag.Z, x == 0 ? 1 : 0);
+    setStatusFlag(StatusFlag.N, x & (1 << 7));
+    return 1;
+  }
+
+  /**
+   * Load Y.
+   *
+   * @return 1
+   */
+  public int LDY() {
+    y = fetch();
+    setStatusFlag(StatusFlag.Z, y == 0 ? 1 : 0);
+    setStatusFlag(StatusFlag.N, y & (1 << 7));
+    return 1;
+  }
+
+  /**
+   * Logical shift right.
+   *
+   * @return 0
+   */
+  public int LSR() {
+    int value = fetch() >> 1;
+    setStatusFlag(StatusFlag.C, (value & 0x0001) != 0 ? 1 : 0);
+    setStatusFlag(StatusFlag.Z, (value & 0x00FF) == 0 ? 1 : 0);
+    setStatusFlag(StatusFlag.N, value & (1 << 7));
+    if (lookup[opcode].addressMode == (Callable) this::IMP) {
+      a = value & 0x00FF;
+    } else {
+      write(address_abs, value & 0x00FF);
+    }
+    return 0;
+  }
+
+  /**
+   * No operation.
+   *
+   * @return 0 or 1 depending on the current opcode
+   */
+  public int NOP() {
+    if (opcode == 0x1C || opcode == 0x3C || opcode == 0x5C || opcode == 0x7C || opcode == 0xDC || opcode == 0xFC) {
+      return 1;
+    }
+    return 0;
+  }
+
+  /**
+   * OR with accumulator.
+   *
+   * @return 1
+   */
+  public int ORA() {
+    a = a | fetch();
+    setStatusFlag(StatusFlag.Z, a == 0 ? 1 : 0);
+    setStatusFlag(StatusFlag.N, a & (1 << 7));
+    return 1;
+  }
+
+  /**
+   * Push the accumulator to the stack.
    *
    * @return 0
    */
@@ -508,7 +695,15 @@ public class CPU {
     return 0;
   }
 
+  /**
+   * Push processor status to the stack.
+   *
+   * @return 0
+   */
   public int PHP() {
+    write((0x0100 + stkPtr--), status | (1 << StatusFlag.B.ordinal()) | (1 << StatusFlag.U.ordinal()));
+    setStatusFlag(StatusFlag.B, 0);
+    setStatusFlag(StatusFlag.U, 0);
     return 0;
   }
 
@@ -524,23 +719,76 @@ public class CPU {
     return 0;
   }
 
+  /**
+   * Pop processor status from the stack.
+   *
+   * @return 0
+   */
   public int PLP() {
+    status = read(0x0100 + ++stkPtr);
+    setStatusFlag(StatusFlag.U, 1);
     return 0;
   }
 
+  /**
+   * Rotate left.
+   *
+   * @return 0
+   */
   public int ROL() {
+    int value = (fetch() << 1) | getStatusFlag(StatusFlag.C);
+    setStatusFlag(StatusFlag.C, (value & 0xFF00) != 0 ? 1 : 0);
+    setStatusFlag(StatusFlag.Z, (value & 0x00FF) == 0 ? 1 : 0);
+    setStatusFlag(StatusFlag.N, value & (1 << 7));
+    if (lookup[opcode].addressMode == (Callable) this::IMP) {
+      a = value & 0x00FF;
+    } else {
+      write(address_abs, value & 0x00FF);
+    }
     return 0;
   }
 
+  /**
+   * Rotate right.
+   *
+   * @return 0
+   */
   public int ROR() {
+    int value = (fetch() >> 1) | (getStatusFlag(StatusFlag.C) << 7);
+    setStatusFlag(StatusFlag.C, (value & 0x0001) != 0 ? 1 : 0);
+    setStatusFlag(StatusFlag.Z, (value & 0x00FF) == 0 ? 1 : 0);
+    setStatusFlag(StatusFlag.N, value & (1 << 7));
+    if (lookup[opcode].addressMode == (Callable) this::IMP) {
+      a = value & 0x00FF;
+    } else {
+      write(address_abs, value & 0x00FF);
+    }
     return 0;
   }
 
+  /**
+   * Return from interrupt.
+   *
+   * @return 0
+   */
   public int RTI() {
+    status = read(0x0100 + ++stkPtr);
+    status &= ~(1 << StatusFlag.B.ordinal());
+    status &= ~(1 << StatusFlag.U.ordinal());
+    pc = read(0x0100 + ++stkPtr);
+    pc |= (read(0x0100 + ++stkPtr) << 8);
     return 0;
   }
 
+  /**
+   * Return from subroutine.
+   *
+   * @return 0
+   */
   public int RTS() {
+    pc = read(0x0100 + ++stkPtr);
+    pc |= (read(0x0100 + ++stkPtr) << 8);
+    pc++;
     return 0;
   }
 
