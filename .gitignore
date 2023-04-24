@@ -13,4 +13,3 @@ target/
 # Ignore build artifacts
 build/
 out/
-

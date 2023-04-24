@@ -7,6 +7,13 @@
   <name>Archetype - NESEmulator</name>
   <url>http://maven.apache.org</url>
 
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.target>17</maven.compiler.target>
+    <maven.compiler.source>17</maven.compiler.source>
+    <build.name>NES-Emulator</build.name>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>org.openjfx</groupId>
@@ -43,6 +50,24 @@
       <artifactId>javafx-web</artifactId>
       <version>19.0.2.1</version>
     </dependency>
+
+    <dependency>
+      <groupId>org.openjfx</groupId>
+      <artifactId>javafx-swing</artifactId>
+      <version>19.0.2.1</version>
+    </dependency>
   </dependencies>
 
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.openjfx</groupId>
+        <artifactId>javafx-maven-plugin</artifactId>
+        <version>0.0.8</version>
+        <configuration>
+          <mainClass>com.carlosh.nesemulator.Main</mainClass>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>
