@@ -10,9 +10,15 @@ public class PPU {
   private ROM rom;
   private int[][] nameTable = new int[2][2048];
   private int[] paletteTable = new int[32];
+  private int[][] patternTable = new int[2][4096];
 
   private int[][] patternTable0;
   private int[][] patternTable1;
+
+  // Registers
+  private ControlRegister control = new ControlRegister();
+  private MaskRegister mask = new MaskRegister();
+  private StatusRegister status = new StatusRegister();
 
   // Color palette containing 64 colors (10 of them are just black (0x000000))
   private int[] colorPalette = new int[] {
@@ -32,14 +38,93 @@ public class PPU {
   private int currentX = 0;
   private int currentY = 0;
 
+  private int whichByte = 0;
+  private int buffer = 0;
+  private int addressPPU = 0;
+
   // TODO
   public int cpuRead(int address, boolean readOnly) {
-    return 0x00;
+    int data = -1;
+    switch (address) {
+      case 0x0000: {
+        // Control
+      }
+      case 0x0001: {
+        // Mask
+      }
+      case 0x0002: {
+        // Status
+        status.write(status.value | 0x7F);
+        data = (status.value & 0xE0) | (buffer & 0x1F);
+        status.write(status.value & 0x7F);
+        whichByte = 0;
+      }
+      case 0x0003: {
+        // OAM Address
+      }
+      case 0x0004: {
+        // OAM Data
+      }
+      case 0x0005: {
+        // Scroll
+      }
+      case 0x0006: {
+        // PPU Address
+      }
+      case 0x0007: {
+        // PPU Data
+        data = buffer;
+        buffer = ppuRead(addressPPU, readOnly);
+        if (addressPPU > 0x3F00) {
+          data = buffer;
+        }
+        addressPPU++;
+      }
+    }
+
+    assert data != -1;
+    return data;
   }
 
   // TODO
   public void cpuWrite(int address, int data) {
-    System.out.println("ROM: " + address + " " + data);
+    switch (address) {
+      case 0x0000: {
+        // Control
+        control.write(data);
+      }
+      case 0x0001: {
+        // Mask
+        mask.write(data);
+      }
+      case 0x0002: {
+        // Status
+      }
+      case 0x0003: {
+        // OAM Address
+      }
+      case 0x0004: {
+        // OAM Data
+      }
+      case 0x0005: {
+        // Scroll
+      }
+      case 0x0006: {
+        // PPU Address
+        addressPPU &= 0xFF00;
+        if (whichByte == 0) {
+          addressPPU |= (data << 8);
+          whichByte = 1;
+        } else {
+          addressPPU |= data;
+          whichByte = 0;
+        }
+      }
+      case 0x0007: {
+        // PPU Data
+        ppuWrite(addressPPU++, data);
+      }
+    }
   }
 
   // TODO
@@ -48,6 +133,29 @@ public class PPU {
     if (rom.ppuRead(address, readOnly)) {
       return 0x00;
     }
+    // Pattern memory
+    else if (address <= 0x1FFF) {
+      return patternTable[(address & 0x1000) >> 12][address & 0x0FFF];
+    }
+    // Name table memory
+    else if (address <= 0x3EFF) {
+
+    }
+    // Palette memory
+    else {
+      address &= 0x001F;
+      if (address == 0x0010) {
+        address = 0x0000;
+      } else if (address == 0x0014) {
+        address = 0x0004;
+      } else if (address == 0x0018) {
+        address = 0x0008;
+      } else if (address == 0x001C) {
+        address = 0x000C;
+      }
+      return paletteTable[address];
+    }
+
     return 0x00;
   }
 
@@ -57,7 +165,30 @@ public class PPU {
     if (rom.ppuWrite(address, data)) {
       return;
     }
-    System.out.println("ROM: " + address + " " + data);
+    // Pattern memory
+    else if (address <= 0x1FFF) {
+      patternTable[(address & 0x1000) >> 12][address & 0x0FFF] = data;
+    }
+    // Name table memory
+    else if (address <= 0x3EFF) {
+      address &= 0x0FFF;
+      // TODO
+
+    }
+    // Palette memory
+    else {
+      address &= 0x001F;
+      if (address == 0x0010) {
+        address = 0x0000;
+      } else if (address == 0x0014) {
+        address = 0x0004;
+      } else if (address == 0x0018) {
+        address = 0x0008;
+      } else if (address == 0x001C) {
+        address = 0x000C;
+      }
+      paletteTable[address] = data;
+    }
   }
 
   public void addROM(ROM rom) {
@@ -145,6 +276,121 @@ public class PPU {
   private int getPaletteColor(int palette, int pixel) {
     int val = ppuRead(0x3F00 + palette * 4 + pixel, false);
     return colorPalette[val & 0x3F];
+  }
+
+  // Inner class for the PPU's control register.
+  private class ControlRegister {
+    private int value;
+
+    public ControlRegister() {
+      value = 0x00;
+    }
+
+    public void write(int data) {
+      value = data;
+    }
+
+    public int getNametableX() {
+      return value & 0x01;
+    }
+
+    public int getNametableY() {
+      return (value & 0x02) >> 1;
+    }
+
+    public int getIncrementMode() {
+      return (value & 0x04) >> 2;
+    }
+
+    public int getPatternSprite() {
+      return (value & 0x08) >> 3;
+    }
+
+    public int getPatternBackground() {
+      return (value & 0x10) >> 4;
+    }
+
+    public int getSpriteSize() {
+      return (value & 0x20) >> 5;
+    }
+
+    public int getSlaveMode() {
+      return (value & 0x40) >> 6;
+    }
+
+    public int getEnableNMI() {
+      return (value & 0x80) >> 7;
+    }
+  }
+
+  // Inner class for the PPU's mask register.
+  private class MaskRegister {
+    private int value;
+
+    public MaskRegister() {
+      value = 0x00;
+    }
+
+    public void write(int data) {
+      value = data;
+    }
+
+    public int getGrayscale() {
+      return value & 0x01;
+    }
+
+    public int getShowLeftBackground() {
+      return (value & 0x02) >> 1;
+    }
+
+    public int getShowLeftSprites() {
+      return (value & 0x04) >> 2;
+    }
+
+    public int getShowBackground() {
+      return (value & 0x08) >> 3;
+    }
+
+    public int getShowSprites() {
+      return (value & 0x10) >> 4;
+    }
+
+    public int getEmphasizeRed() {
+      return (value & 0x20) >> 5;
+    }
+
+    public int getEmphasizeGreen() {
+      return (value & 0x40) >> 6;
+    }
+
+    public int getEmphasizeBlue() {
+      return (value & 0x80) >> 7;
+    }
+  }
+
+  // Inner class for the PPU's status register.
+  private class StatusRegister {
+    private int value;
+
+    public StatusRegister() {
+      value = 0x00;
+    }
+
+    public void write(int data) {
+      value = data;
+    }
+
+    public int getVerticalBlank() {
+      return (value & 0x80) >> 7;
+    }
+
+    public int getSpriteZeroHit() {
+      return (value & 0x40) >> 6;
+    }
+
+    public int getSpriteOverflow() {
+      return (value & 0x20) >> 5;
+    }
   }
 
 
