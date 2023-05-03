@@ -4,14 +4,15 @@ import com.carlosh.nesemulator.mappers.Mapper;
 import com.carlosh.nesemulator.mappers.Mapper000;
 import java.io.File;
 import java.io.FileInputStream;
+import java.util.ArrayList;
 import java.util.List;
 
 public class ROM {
   private int[] romBytes;
   private String filename;
 
-  private List<Integer> prgROM;
-  private List<Integer> chrROM;
+  private List<Integer> prgROM = new ArrayList<>();
+  private List<Integer> chrROM = new ArrayList<>();
   private ROM_Header header;
   private Mapper mapper;
 
@@ -49,8 +50,9 @@ public class ROM {
 
     header = loadHeader(romBytes);
 
+    int start = 16;
     if ((header.mapper1 & 0x04) != 0) {
-      // TODO: Skip trainer
+      start = 512;
     }
 
     // Mapper id and mirror
@@ -59,6 +61,30 @@ public class ROM {
 
     // File type
     int fileType = (header.mapper2 & 0x0C) == 0x08 ? 2 : 1;
+
+    if (fileType == 1) {
+      prgBanks = header.prgROMSize;
+      for (int i = start; i < start + prgBanks * 16384; i++) {
+        prgROM.add(romBytes[i]);
+      }
+      chrBanks = header.chrROMSize;
+      start = start + prgBanks * 16384;
+      int end = start + Math.min(chrBanks * 8192, 8192);
+      for (int i = start; i < end; i++) {
+        chrROM.add(romBytes[i]);
+      }
+    } else if (fileType == 2) {
+      prgBanks = ((header.prgROMSize & 0x07) << 8) | header.prgROMSize;
+      for (int i = start; i < start + prgBanks * 16384; i++) {
+        prgROM.add(romBytes[i]);
+      }
+      chrBanks = ((header.chrROMSize & 0x38) << 8) | header.chrROMSize;
+      start = start + prgBanks * 16384;
+      int end = start + chrBanks * 8192;
+      for (int i = start; i < end; i++) {
+        chrROM.add(romBytes[i]);
+      }
+    }
 
     // Load mapper
     switch (mapperID) {
@@ -128,9 +154,23 @@ public class ROM {
     return romBytes;
   }
 
-  // TODO
   private ROM_Header loadHeader(int[] romBytes) {
-    // TODO
-    return null;
+    ROM_Header newHeader = new ROM_Header();
+    StringBuilder name = new StringBuilder();
+    for (int i = 0; i < 4; i++) {
+      name.append((char) romBytes[i]);
+    }
+    newHeader.name = name.toString();
+    newHeader.unused = "";
+
+    newHeader.prgROMSize = romBytes[4];
+    newHeader.chrROMSize = romBytes[5];
+    newHeader.mapper1 = romBytes[6];
+    newHeader.mapper2 = romBytes[7];
+    newHeader.prgRAMSize = romBytes[8];
+    newHeader.tvSystem1 = romBytes[9];
+    newHeader.tvSystem2 = romBytes[10];
+
+    return newHeader;
   }
 }
