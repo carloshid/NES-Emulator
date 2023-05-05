@@ -267,23 +267,25 @@ public class PPU {
     }
 
     if ((currentX >= 2 && currentX < 258) || (currentX >= 321 && cycle < 338) && currentY < 240) {
-      // TODO
+      updateBackgroundShifters();
+      prepareBackground((currentX - 1) % 8);
+    }
+
+    if (currentX == 256 && currentY < 240) {
+      incrementY();
     }
 
     if (currentX == 257 && currentY < 240) {
-      // TODO
-    }
-
-    if (currentX == 257 && currentY < 240) {
-      // TODO
+      loadBackgroundShifters();
+      copyX();
     }
 
     if ((currentX == 338 || currentX == 340) && currentY < 240) {
-      // TODO
+      bgNextTileId = ppuRead(0x2000 | (vramAddress.value & 0x0FFF), false);
     }
 
     if (currentY == -1 && currentX >= 280 && currentX < 305) {
-      // TODO
+      copyY();
     }
 
     if (currentY == ScreenNES.NES_HEIGHT + 1 && currentX == 1) {
@@ -293,7 +295,7 @@ public class PPU {
       }
     }
 
-    //drawPixel(currentX, currentY, ((new Random().nextInt()) % 2) == 0 ? 0xFFFFFF : 0x000000);
+    drawPixel(currentX, currentY, 0x000000);
 
     currentX++;
     if (currentX >= 341) {
@@ -315,7 +317,9 @@ public class PPU {
 
 
   private void drawPixel(int x, int y, int color) {
-    pixels[x][y] = color;
+    if (x >= 0 && x < ScreenNES.NES_WIDTH && y >= 0 && y < ScreenNES.NES_HEIGHT) {
+      pixels[x][y] = color;
+    }
   }
 
   /**
@@ -615,6 +619,93 @@ public class PPU {
 
     public void setFineY(int val) {
       value = (value & 0x8FFF) | ((val & 0x0007) << 12);
+    }
+  }
+
+  private void incrementX() {
+    if ((mask.getShowBackground() + mask.getShowSprites()) != 0) {
+      if (vramAddress.getCoarseX() == 31) {
+        vramAddress.setCoarseX(0);
+        vramAddress.setNametableX((vramAddress.getNametableX() + 1) % 2);
+      } else {
+        vramAddress.setCoarseX(vramAddress.getCoarseX() + 1);
+      }
+    }
+  }
+
+  private void incrementY() {
+    if ((mask.getShowBackground() + mask.getShowSprites()) != 0) {
+      if (vramAddress.getFineY() < 7) {
+        vramAddress.setFineY(vramAddress.getFineY() + 1);
+      } else {
+        vramAddress.setFineY(0);
+        if (vramAddress.getCoarseY() == 29) {
+          vramAddress.setCoarseY(0);
+          vramAddress.setNametableY((vramAddress.getNametableY() + 1) % 2);
+        } else if (vramAddress.getCoarseY() == 31) {
+          vramAddress.setCoarseY(0);
+        } else {
+          vramAddress.setCoarseY(vramAddress.getCoarseY() + 1);
+        }
+      }
+    }
+  }
+
+  private void copyX() {
+    if ((mask.getShowBackground() + mask.getShowSprites()) != 0) {
+      vramAddress.setNametableX(tramAddress.getNametableX());
+      vramAddress.setCoarseX(tramAddress.getCoarseX());
+    }
+  }
+
+  private void copyY() {
+    if ((mask.getShowBackground() + mask.getShowSprites()) != 0) {
+      vramAddress.setFineY(tramAddress.getFineY());
+      vramAddress.setNametableY(tramAddress.getNametableY());
+      vramAddress.setCoarseY(tramAddress.getCoarseY());
+    }
+  }
+
+  private void loadBackgroundShifters() {
+    bgShifterPatternLo = (bgShifterPatternLo & 0xFF00) | bgNextTileLsb;
+    bgShifterPatternHi = (bgShifterPatternHi & 0xFF00) | bgNextTileMsb;
+    bgShifterAttribLo = (bgShifterAttribLo & 0xFF00) | ((bgNextTileAttrib & 0b01) != 0 ? 0xFF : 0x00);
+    bgShifterAttribHi = (bgShifterAttribHi & 0xFF00) | ((bgNextTileAttrib & 0b10) != 0 ? 0xFF : 0x00);
+  }
+
+  private void updateBackgroundShifters() {
+    if (mask.getShowBackground() != 0) {
+      bgShifterPatternLo <<= 1;
+      bgShifterPatternHi <<= 1;
+      bgShifterAttribLo <<= 1;
+      bgShifterAttribHi <<= 1;
+    }
+  }
+
+  private void prepareBackground(int step) {
+    assert step >= 0 && step <= 7;
+    if (step == 0) {
+      loadBackgroundShifters();
+      bgNextTileId = ppuRead(0x2000 | (vramAddress.value & 0x0FFF), false);
+    } else if (step == 2) {
+      bgNextTileAttrib = ppuRead(0x23C0 | (vramAddress.getNametableY() << 11)
+          | (vramAddress.getNametableX() << 10) | ((vramAddress.getCoarseY() >> 2) << 3)
+          | (vramAddress.getCoarseX() >> 2), false);
+      if ((vramAddress.getCoarseY() & 0x02) != 0) {
+        bgNextTileAttrib >>= 4;
+      }
+      if ((vramAddress.getCoarseX() & 0x02) != 0) {
+        bgNextTileAttrib >>= 2;
+      }
+      bgNextTileAttrib &= 0x03;
+    } else if (step == 4) {
+      bgNextTileLsb = ppuRead((control.getPatternBackground() << 12)
+          + (bgNextTileId << 4) + vramAddress.getFineY(), false);
+    } else if (step == 6) {
+      bgNextTileMsb = ppuRead((control.getPatternBackground() << 12)
+          + (bgNextTileId << 4) + vramAddress.getFineY() + 8, false);
+    } else if (step == 7) {
+      incrementX();
     }
   }
 
