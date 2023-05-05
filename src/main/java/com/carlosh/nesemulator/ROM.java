@@ -45,10 +45,14 @@ public class ROM {
   public ROM(String filename) {
     this.header = new ROM_Header();
     valid = false;
+
+
     romBytes = readFile(filename);
+
     this.filename = filename;
 
     header = loadHeader(romBytes);
+
 
     int start = 16;
     if ((header.mapper1 & 0x04) != 0) {
@@ -74,18 +78,17 @@ public class ROM {
         chrROM.add(romBytes[i]);
       }
     } else if (fileType == 2) {
-      prgBanks = ((header.prgROMSize & 0x07) << 8) | header.prgROMSize;
+      prgBanks = ((header.prgRAMSize & 0x07) << 8) | header.prgROMSize;
       for (int i = start; i < start + prgBanks * 16384; i++) {
         prgROM.add(romBytes[i]);
       }
-      chrBanks = ((header.chrROMSize & 0x38) << 8) | header.chrROMSize;
+      chrBanks = ((header.prgRAMSize & 0x38) << 8) | header.chrROMSize;
       start = start + prgBanks * 16384;
       int end = start + chrBanks * 8192;
       for (int i = start; i < end; i++) {
         chrROM.add(romBytes[i]);
       }
     }
-
     // Load mapper
     switch (mapperID) {
       case 0: {

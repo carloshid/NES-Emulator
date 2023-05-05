@@ -42,6 +42,8 @@ public class Main extends Application {
     stage.setScene(scene);
     stage.show();
 
+    ROM rom = new ROM("rom.nes"); // Change to the filename of the rom file
+    /*
     PPU ppu = new PPU();
     Thread t = new Thread(new Runnable() {
       @Override
@@ -53,5 +55,7 @@ public class Main extends Application {
     });
 
     t.start();
+    */
+
   }
 }
