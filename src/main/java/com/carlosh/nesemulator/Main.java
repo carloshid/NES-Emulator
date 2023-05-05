@@ -42,20 +42,22 @@ public class Main extends Application {
     stage.setScene(scene);
     stage.show();
 
-    ROM rom = new ROM("rom.nes"); // Change to the filename of the rom file
-    /*
-    PPU ppu = new PPU();
+    ROM rom = new ROM("nestest.nes"); // Change to the filename of the rom file
+    Bus bus = new Bus();
+    bus.addROM(rom);
+    //PPU ppu = new PPU();
+    //ppu.addROM(rom);
     Thread t = new Thread(new Runnable() {
       @Override
       public void run() {
         while (true) {
-          ppu.clock();
+          bus.clock();
         }
       }
     });
 
     t.start();
-    */
+
 
   }
 }

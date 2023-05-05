@@ -7,6 +7,14 @@ import java.util.Random;
 
 public class PPU {
 
+  /**
+   * The PPU is a singleton.
+   */
+  public static final PPU instance = new PPU();
+
+  private PPU() {
+  }
+
   private ROM rom;
   private int[][] nameTable = new int[2][2048];
   private int[] paletteTable = new int[32];
@@ -33,6 +41,17 @@ public class PPU {
   private int bgShifterAttribHi = 0x0000;
 
   // Color palette containing 64 colors (10 of them are just black (0x000000))
+  private int[] colorPalette2 = new int[] {
+      0x545454, 0x001E74, 0x081090, 0x300088, 0x440064, 0x5C0030, 0x540400, 0x3C1800,
+      0x202A00, 0x083A00, 0x004000, 0x003C00, 0x00323C, 0x000000, 0x000000, 0x000000,
+      0x989698, 0x084CC4, 0x3032EC, 0x5C1EE4, 0x8814B0, 0xA01464, 0x982220, 0x783C00,
+      0x545A00, 0x287200, 0x087C00, 0x007628, 0x006678, 0x000000, 0x000000, 0x000000,
+      0xECEEEC, 0x4C9AEC, 0x787CEC, 0xB062EC, 0xE454EC, 0xEC58B4, 0xEC6A64, 0xD48820,
+      0xA0AA00, 0x74C400, 0x4CD020, 0x38CC6C, 0x38B4CC, 0x3C3C3C, 0x000000, 0x000000,
+      0xECEEEC, 0xA8CCEC, 0xBCBCEC, 0xD4B2EC, 0xECAEEC, 0xECAED4, 0xECB4B0, 0xE4C490,
+      0xCCD278, 0xB4DE78, 0xA8E290, 0x98E2B4, 0xA0D6E4, 0xA0A2A0, 0x000000, 0x000000
+  };
+
   private int[] colorPalette = new int[] {
       0x545454, 0x001E74, 0x081090, 0x300088, 0x440064, 0x5C0030, 0x540400, 0x3C1800,
       0x202A00, 0x083A00, 0x004000, 0x003C00, 0x00323C, 0x000000, 0x000000, 0x000000,
@@ -43,6 +62,7 @@ public class PPU {
       0xECEEEC, 0xA8CCEC, 0xBCBCEC, 0xD4B2EC, 0xECAEEC, 0xECAED4, 0xECB4B0, 0xE4C490,
       0xCCD278, 0xB4DE78, 0xA8E290, 0x98E2B4, 0xA0D6E4, 0xA0A2A0, 0x000000, 0x000000
   };
+
 
   private int count = 0;
   private int cycle = 0;
@@ -288,14 +308,29 @@ public class PPU {
       copyY();
     }
 
-    if (currentY == ScreenNES.NES_HEIGHT + 1 && currentX == 1) {
+    if (currentY == 241 && currentX == 1) {
       status.setVerticalBlank(true);
       if (control.getEnableNMI() == 1) {
         nmi = true;
       }
     }
 
-    drawPixel(currentX, currentY, 0x000000);
+    // Render background
+    int bgPixel = 0x00;
+    int bgPal = 0x00;
+    int color = 0x000000;
+    if (mask.getShowBackground() == 1) {
+      int bitMux = 0x8000 >> fineX;
+      int p0Pixel = (bgShifterPatternLo & bitMux) > 0 ? 1 : 0;
+      int p1Pixel = (bgShifterPatternHi & bitMux) > 0 ? 1 : 0;
+      bgPixel = (p1Pixel << 1) | p0Pixel;
+      int bgPal0 = (bgShifterAttribLo & bitMux) > 0 ? 1 : 0;
+      int bgPal1 = (bgShifterAttribHi & bitMux) > 0 ? 1 : 0;
+      bgPal = (bgPal1 << 1) | bgPal0;
+    }
+    color = getPaletteColor(bgPal, bgPixel);
+
+    drawPixel(currentX - 1, currentY, color);
 
     currentX++;
     if (currentX >= 341) {
@@ -305,7 +340,7 @@ public class PPU {
         currentY = -1;
         ScreenNES.getInstance().updateScreen(pixels);
         try {
-          System.out.println(++count);
+          //System.out.println(++count);
           sleep(17);
         } catch (InterruptedException e) {
           throw new RuntimeException(e);
@@ -374,6 +409,7 @@ public class PPU {
   }
 
   private int getPaletteColor(int palette, int pixel) {
+    System.out.println(palette + " " + pixel);
     int val = ppuRead(0x3F00 + palette * 4 + pixel, false);
     return colorPalette[val & 0x3F];
   }

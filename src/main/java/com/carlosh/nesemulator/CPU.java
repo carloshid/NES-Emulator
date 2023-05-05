@@ -10,6 +10,7 @@ public class CPU {
   public static final CPU instance = new CPU();
 
   private CPU() {
+    initializeInstructions();
   }
 
   private Bus bus;
@@ -1122,6 +1123,12 @@ public class CPU {
     lookup[0xF9] = new Instruction("SBC", this::SBC, this::ABY, 4);
     lookup[0xFD] = new Instruction("SBC", this::SBC, this::ABX, 4);
     lookup[0xFE] = new Instruction("INC", this::INC, this::ABX, 7);
+
+    for (int i = 0; i < 0xFF; i++) {
+      if (lookup[i] == null) {
+        lookup[i] = new Instruction("XXX", this::XXX, this::IMP, 2);
+      }
+    }
   }
 
 

@@ -37,6 +37,7 @@ public class Bus {
     Arrays.fill(ram, 0x00);
     cpu = CPU.instance;
     cpu.connectBus(this);
+    ppu = PPU.instance;
   }
 
   public void addROM(ROM rom) {
