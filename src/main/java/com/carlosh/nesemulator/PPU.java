@@ -126,6 +126,7 @@ public class PPU {
 
   // TODO
   public void cpuWrite(int address, int data) {
+    System.out.println("CPU write: " + Integer.toHexString(address) + " " + Integer.toHexString(data));
     switch (address) {
       case 0x0000: {
         // Control
@@ -276,7 +277,6 @@ public class PPU {
     nmi = val;
   }
 
-  // TODO
   public void clock() {
     if (currentY == 0 && currentX == 0) {
       currentX = 1;
@@ -327,6 +327,7 @@ public class PPU {
       int bgPal0 = (bgShifterAttribLo & bitMux) > 0 ? 1 : 0;
       int bgPal1 = (bgShifterAttribHi & bitMux) > 0 ? 1 : 0;
       bgPal = (bgPal1 << 1) | bgPal0;
+      System.out.println(p0Pixel + " " + p1Pixel + " " + bgPal0 + " " + bgPal1);
     }
     color = getPaletteColor(bgPal, bgPixel);
 
@@ -409,7 +410,7 @@ public class PPU {
   }
 
   private int getPaletteColor(int palette, int pixel) {
-    System.out.println(palette + " " + pixel);
+    //System.out.println(palette + " " + pixel);
     int val = ppuRead(0x3F00 + palette * 4 + pixel, false);
     return colorPalette[val & 0x3F];
   }
@@ -743,6 +744,27 @@ public class PPU {
     } else if (step == 7) {
       incrementX();
     }
+  }
+
+  public void reset() {
+    fineX = 0;
+    whichByte = 0;
+    buffer = 0;
+    currentX = 0;
+    currentY = 0;
+    bgNextTileAttrib = 0;
+    bgNextTileId = 0;
+    bgNextTileLsb = 0;
+    bgNextTileMsb = 0;
+    bgShifterAttribHi = 0;
+    bgShifterAttribLo = 0;
+    bgShifterPatternHi = 0;
+    bgShifterPatternLo = 0;
+    status.value = 0;
+    mask.value = 0;
+    control.value = 0;
+    tramAddress.value = 0;
+    vramAddress.value = 0;
   }
 
 

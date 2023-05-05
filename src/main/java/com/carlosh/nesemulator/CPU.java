@@ -1,5 +1,7 @@
 package com.carlosh.nesemulator;
 
+import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.util.concurrent.Callable;
 
 public class CPU {
@@ -865,6 +867,13 @@ public class CPU {
   public void clockCycle() throws Exception {
     if (cycles == 0) {
       opcode = read(pc++);
+      //FileOutputStream outputStream = new FileOutputStream("output.txt");
+      //FileWriter writer = new FileWriter("output.txt", true);
+      //System.out.println("Opcode: " + opcode);
+      //System.out.println(" (" + lookup[opcode].name + ")");
+      //String data = "Opcode: " + opcode + " (" + lookup[opcode].name + ")\n";
+      //writer.write(data);
+      //writer.close();
 
       cycles = lookup[opcode].cycles;
 
@@ -972,7 +981,7 @@ public class CPU {
   public Instruction[] lookup = new Instruction[256];
 
   private void initializeInstructions() {
-    lookup[0x00] = new Instruction("BRK", this::BRK, this::IMP, 7);
+    lookup[0x00] = new Instruction("BRK", this::BRK, this::IMM, 7);
     lookup[0x01] = new Instruction("ORA", this::ORA, this::IZX, 6);
     lookup[0x05] = new Instruction("ORA", this::ORA, this::ZP0, 3);
     lookup[0x06] = new Instruction("ASL", this::ASL, this::ZP0, 5);
@@ -1124,11 +1133,13 @@ public class CPU {
     lookup[0xFD] = new Instruction("SBC", this::SBC, this::ABX, 4);
     lookup[0xFE] = new Instruction("INC", this::INC, this::ABX, 7);
 
-    for (int i = 0; i < 0xFF; i++) {
+    for (int i = 0; i <= 0xFF; i++) {
       if (lookup[i] == null) {
         lookup[i] = new Instruction("XXX", this::XXX, this::IMP, 2);
       }
     }
+
+    lookup[3] = new Instruction("XXX", this::XXX, this::IMP, 8);
   }
 
 

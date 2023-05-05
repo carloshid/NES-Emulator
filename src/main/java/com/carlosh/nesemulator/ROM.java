@@ -101,13 +101,12 @@ public class ROM {
     valid = true;
   }
 
-  public boolean cpuRead(int address, boolean readOnly) {
+  public int cpuRead(int address, boolean readOnly) {
     int mappedAddress = mapper.cpuRead(address);
     if (mappedAddress != -1) {
-      int data = prgROM.get(mappedAddress);
-      return true;
+      return prgROM.get(mappedAddress);
     }
-    return false;
+    return -1;
   }
 
   public boolean cpuWrite(int address, int data) {
