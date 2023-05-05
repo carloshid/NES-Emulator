@@ -19,6 +19,18 @@ public class PPU {
   private ControlRegister control = new ControlRegister();
   private MaskRegister mask = new MaskRegister();
   private StatusRegister status = new StatusRegister();
+  private LoopyRegister vramAddress = new LoopyRegister();
+  private LoopyRegister tramAddress = new LoopyRegister();
+
+  private int fineX = 0x00;
+  private int bgNextTileId = 0x00;
+  private int bgNextTileAttrib = 0x00;
+  private int bgNextTileLsb = 0x00;
+  private int bgNextTileMsb = 0x00;
+  private int bgShifterPatternLo = 0x0000;
+  private int bgShifterPatternHi = 0x0000;
+  private int bgShifterAttribLo = 0x0000;
+  private int bgShifterAttribHi = 0x0000;
 
   // Color palette containing 64 colors (10 of them are just black (0x000000))
   private int[] colorPalette = new int[] {
@@ -42,7 +54,8 @@ public class PPU {
 
   private int whichByte = 0;
   private int buffer = 0;
-  private int addressPPU = 0;
+
+
 
   // TODO
   public int cpuRead(int address, boolean readOnly) {
@@ -75,11 +88,15 @@ public class PPU {
       case 0x0007: {
         // PPU Data
         data = buffer;
-        buffer = ppuRead(addressPPU, readOnly);
-        if (addressPPU > 0x3F00) {
+        buffer = ppuRead(vramAddress.value, readOnly);
+        if (vramAddress.value > 0x3F00) {
           data = buffer;
         }
-        addressPPU++;
+        if (control.getIncrementMode() == 0) {
+          vramAddress.value++;
+        } else {
+          vramAddress.value += 32;
+        }
       }
     }
 
@@ -93,6 +110,8 @@ public class PPU {
       case 0x0000: {
         // Control
         control.write(data);
+        tramAddress.setNametableX(control.getNametableX());
+        tramAddress.setNametableY(control.getNametableY());
       }
       case 0x0001: {
         // Mask
@@ -109,25 +128,35 @@ public class PPU {
       }
       case 0x0005: {
         // Scroll
+        if (whichByte == 0) {
+          fineX = data & 0x07;
+          tramAddress.setCoarseX(data >> 3);
+          whichByte = 1;
+        } else {
+          tramAddress.setFineY(data & 0x07);
+          tramAddress.setCoarseY(data >> 3);
+          whichByte = 0;
+        }
       }
       case 0x0006: {
         // PPU Address
-        addressPPU &= 0xFF00;
+        tramAddress.value &= 0xFF00;
         if (whichByte == 0) {
-          addressPPU |= (data << 8);
+          tramAddress.value |= (data << 8);
           whichByte = 1;
         } else {
-          addressPPU |= data;
+          tramAddress.value |= data;
+          vramAddress.value = tramAddress.value;
           whichByte = 0;
         }
       }
       case 0x0007: {
         // PPU Data
-        ppuWrite(addressPPU++, data);
+        ppuWrite(vramAddress.value, data);
         if (control.getIncrementMode() == 0) {
-          addressPPU++;
+          vramAddress.value++;
         } else {
-          addressPPU += 32;
+          vramAddress.value += 32;
         }
       }
     }
@@ -229,11 +258,35 @@ public class PPU {
 
   // TODO
   public void clock() {
-    if (currentY == -1 && cycle == 1) {
+    if (currentY == 0 && currentX == 0) {
+      currentX = 1;
+    }
+
+    if (currentY == -1 && currentX == 1) {
       status.setVerticalBlank(false);
     }
 
-    if (currentY > ScreenNES.NES_HEIGHT && cycle == 1) {
+    if ((currentX >= 2 && currentX < 258) || (currentX >= 321 && cycle < 338) && currentY < 240) {
+      // TODO
+    }
+
+    if (currentX == 257 && currentY < 240) {
+      // TODO
+    }
+
+    if (currentX == 257 && currentY < 240) {
+      // TODO
+    }
+
+    if ((currentX == 338 || currentX == 340) && currentY < 240) {
+      // TODO
+    }
+
+    if (currentY == -1 && currentX >= 280 && currentX < 305) {
+      // TODO
+    }
+
+    if (currentY == ScreenNES.NES_HEIGHT + 1 && currentX == 1) {
       status.setVerticalBlank(true);
       if (control.getEnableNMI() == 1) {
         nmi = true;
@@ -243,11 +296,11 @@ public class PPU {
     //drawPixel(currentX, currentY, ((new Random().nextInt()) % 2) == 0 ? 0xFFFFFF : 0x000000);
 
     currentX++;
-    if (currentX >= ScreenNES.NES_WIDTH) {
+    if (currentX >= 341) {
       currentX = 0;
       currentY++;
-      if (currentY >= ScreenNES.NES_HEIGHT) {
-        currentY = 0;
+      if (currentY >= 261) {
+        currentY = -1;
         ScreenNES.getInstance().updateScreen(pixels);
         try {
           System.out.println(++count);
@@ -509,6 +562,59 @@ public class PPU {
 
     public void setSpriteOverflow(boolean val) {
       value = val ? value | 0x20 : value & 0xDF;
+    }
+  }
+
+  // Inner class for the PPU's oam address register.
+  private class LoopyRegister {
+    private int value;
+
+    public LoopyRegister() {
+      value = 0x00;
+    }
+
+    public void write(int data) {
+      value = data;
+    }
+
+    public int getCoarseX() {
+      return value & 0x001F;
+    }
+
+    public int getCoarseY() {
+      return (value & 0x03E0) >> 5;
+    }
+
+    public int getNametableX() {
+      return (value & 0x0400) >> 10;
+    }
+
+    public int getNametableY() {
+      return (value & 0x0800) >> 11;
+    }
+
+    public int getFineY() {
+      return (value & 0x7000) >> 12;
+    }
+
+    public void setCoarseX(int val) {
+      value = (value & 0xFFE0) | (val & 0x001F);
+    }
+
+    public void setCoarseY(int val) {
+      value = (value & 0xFC1F) | ((val & 0x001F) << 5);
+    }
+
+    public void setNametableX(int val) {
+      value = (value & 0xFBFF) | ((val & 0x0001) << 10);
+    }
+
+    public void setNametableY(int val) {
+      value = (value & 0xF7FF) | ((val & 0x0001) << 11);
+    }
+
+    public void setFineY(int val) {
+      value = (value & 0x8FFF) | ((val & 0x0007) << 12);
     }
   }
 
