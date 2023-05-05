@@ -13,3 +13,6 @@ target/
 # Ignore build artifacts
 build/
 out/
+
+# Ignore test roms
+*.nes
