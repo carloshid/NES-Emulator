@@ -33,6 +33,8 @@ public class PPU {
   };
 
   private int count = 0;
+  private int cycle = 0;
+  private boolean nmi = false;
 
   private int[][] pixels = new int[ScreenNES.NES_WIDTH][ScreenNES.NES_HEIGHT];
   private int currentX = 0;
@@ -54,7 +56,6 @@ public class PPU {
       }
       case 0x0002: {
         // Status
-        status.write(status.value | 0x7F);
         data = (status.value & 0xE0) | (buffer & 0x1F);
         status.write(status.value & 0x7F);
         whichByte = 0;
@@ -123,6 +124,11 @@ public class PPU {
       case 0x0007: {
         // PPU Data
         ppuWrite(addressPPU++, data);
+        if (control.getIncrementMode() == 0) {
+          addressPPU++;
+        } else {
+          addressPPU += 32;
+        }
       }
     }
   }
@@ -139,7 +145,17 @@ public class PPU {
     }
     // Name table memory
     else if (address <= 0x3EFF) {
-
+      address &= 0x0FFF;
+      // Vertical mirroring
+      if (rom.getMirror() == ROM.Mirror.VERTICAL) {
+        int bit = (address & 0x0400) >> 10;
+        return nameTable[bit][address & 0x03FF];
+      }
+      // Horizontal mirroring
+      else if (rom.getMirror() == ROM.Mirror.HORIZONTAL) {
+        int bit = (address & 0x0800) >> 11;
+        return nameTable[bit][address & 0x03FF];
+      }
     }
     // Palette memory
     else {
@@ -172,8 +188,16 @@ public class PPU {
     // Name table memory
     else if (address <= 0x3EFF) {
       address &= 0x0FFF;
-      // TODO
-
+      // Vertical mirroring
+      if (rom.getMirror() == ROM.Mirror.VERTICAL) {
+        int bit = (address & 0x0400) >> 10;
+        nameTable[bit][address & 0x03FF] = data;
+      }
+      // Horizontal mirroring
+      else if (rom.getMirror() == ROM.Mirror.HORIZONTAL) {
+        int bit = (address & 0x0800) >> 11;
+        nameTable[bit][address & 0x03FF] = data;
+      }
     }
     // Palette memory
     else {
@@ -195,9 +219,28 @@ public class PPU {
     this.rom = rom;
   }
 
+  public boolean getNonMaskableInterrupt() {
+    return nmi;
+  }
+
+  public void setNonMaskableInterrupt(boolean val) {
+    nmi = val;
+  }
+
   // TODO
   public void clock() {
-    drawPixel(currentX, currentY, ((new Random().nextInt()) % 2) == 0 ? 0xFFFFFF : 0x000000);
+    if (currentY == -1 && cycle == 1) {
+      status.setVerticalBlank(false);
+    }
+
+    if (currentY > ScreenNES.NES_HEIGHT && cycle == 1) {
+      status.setVerticalBlank(true);
+      if (control.getEnableNMI() == 1) {
+        nmi = true;
+      }
+    }
+
+    //drawPixel(currentX, currentY, ((new Random().nextInt()) % 2) == 0 ? 0xFFFFFF : 0x000000);
 
     currentX++;
     if (currentX >= ScreenNES.NES_WIDTH) {
@@ -321,6 +364,38 @@ public class PPU {
     public int getEnableNMI() {
       return (value & 0x80) >> 7;
     }
+
+    public void setNametableX(boolean val) {
+      value = val ? value | 0x01 : value & 0xFE;
+    }
+
+    public void setNametableY(boolean val) {
+      value = val ? value | 0x02 : value & 0xFD;
+    }
+
+    public void setIncrementMode(boolean val) {
+      value = val ? value | 0x04 : value & 0xFB;
+    }
+
+    public void setPatternSprite(boolean val) {
+      value = val ? value | 0x08 : value & 0xF7;
+    }
+
+    public void setPatternBackground(boolean val) {
+      value = val ? value | 0x10 : value & 0xEF;
+    }
+
+    public void setSpriteSize(boolean val) {
+      value = val ? value | 0x20 : value & 0xDF;
+    }
+
+    public void setSlaveMode(boolean val) {
+      value = val ? value | 0x40 : value & 0xBF;
+    }
+
+    public void setEnableNMI(boolean val) {
+      value = val ? value | 0x80 : value & 0x7F;
+    }
   }
 
   // Inner class for the PPU's mask register.
@@ -366,6 +441,38 @@ public class PPU {
     public int getEmphasizeBlue() {
       return (value & 0x80) >> 7;
     }
+
+    public void setGrayscale(boolean val) {
+      value = val ? value | 0x01 : value & 0xFE;
+    }
+
+    public void setShowLeftBackground(boolean val) {
+      value = val ? value | 0x02 : value & 0xFD;
+    }
+
+    public void setShowLeftSprites(boolean val) {
+      value = val ? value | 0x04 : value & 0xFB;
+    }
+
+    public void setShowBackground(boolean val) {
+      value = val ? value | 0x08 : value & 0xF7;
+    }
+
+    public void setShowSprites(boolean val) {
+      value = val ? value | 0x10 : value & 0xEF;
+    }
+
+    public void setEmphasizeRed(boolean val) {
+      value = val ? value | 0x20 : value & 0xDF;
+    }
+
+    public void setEmphasizeGreen(boolean val) {
+      value = val ? value | 0x40 : value & 0xBF;
+    }
+
+    public void setEmphasizeBlue(boolean val) {
+      value = val ? value | 0x80 : value & 0x7F;
+    }
   }
 
   // Inner class for the PPU's status register.
@@ -390,6 +497,18 @@ public class PPU {
 
     public int getSpriteOverflow() {
       return (value & 0x20) >> 5;
+    }
+
+    public void setVerticalBlank(boolean val) {
+      value = val ? value | 0x80 : value & 0x7F;
+    }
+
+    public void setSpriteZeroHit(boolean val) {
+      value = val ? value | 0x40 : value & 0xBF;
+    }
+
+    public void setSpriteOverflow(boolean val) {
+      value = val ? value | 0x20 : value & 0xDF;
     }
   }
 

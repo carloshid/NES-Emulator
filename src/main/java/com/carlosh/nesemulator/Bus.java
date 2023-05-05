@@ -58,6 +58,12 @@ public class Bus {
         throw new RuntimeException(e);
       }
     }
+
+    if (ppu.getNonMaskableInterrupt()) {
+      ppu.setNonMaskableInterrupt(false);
+      cpu.nonMaskableInterruptRequest();
+    }
+
     clockCounter++;
   }
 

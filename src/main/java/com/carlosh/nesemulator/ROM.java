@@ -35,7 +35,7 @@ public class ROM {
     String unused;
   }
 
-  private enum Mirror {
+  public enum Mirror {
     HORIZONTAL,
     VERTICAL,
     ONESCREEN_LO,
@@ -173,4 +173,10 @@ public class ROM {
 
     return newHeader;
   }
+
+  public Mirror getMirror() {
+    return mirror;
+  }
+
+
 }
