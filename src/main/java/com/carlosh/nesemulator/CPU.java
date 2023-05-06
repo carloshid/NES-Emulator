@@ -80,7 +80,7 @@ public class CPU {
     }
   }
 
-  int status = 0x00;  // Status register
+  byte status = 0x00;  // Status register
   int a = 0x00;  // Accumulator register
   int x = 0x00;  // X register
   int y = 0x00;  // Y register
@@ -728,7 +728,7 @@ public class CPU {
    * @return 0
    */
   public int PLP() {
-    status = read(0x0100 + ++stkPtr);
+    status = (byte) read(0x0100 + ++stkPtr);
     setStatusFlag(StatusFlag.U, 1);
     return 0;
   }
@@ -775,9 +775,11 @@ public class CPU {
    * @return 0
    */
   public int RTI() {
-    status = read(0x0100 + ++stkPtr);
+    status = (byte) read(0x0100 + ++stkPtr);
+    //System.out.println(Integer.toBinaryString(status) + " " + Integer.toBinaryString(1 << StatusFlag.B.ordinal()) + " " + Integer.toBinaryString(~(1 << StatusFlag.B.ordinal())));
     status &= ~(1 << StatusFlag.B.ordinal());
     status &= ~(1 << StatusFlag.U.ordinal());
+    //System.out.println(Integer.toBinaryString(status));
     pc = read(0x0100 + ++stkPtr);
     pc |= (read(0x0100 + ++stkPtr) << 8);
     return 0;
@@ -869,8 +871,8 @@ public class CPU {
       opcode = read(pc++);
       //FileOutputStream outputStream = new FileOutputStream("output.txt");
       //FileWriter writer = new FileWriter("output.txt", true);
-      //System.out.println("Opcode: " + opcode);
-      //System.out.println(" (" + lookup[opcode].name + ")");
+      System.out.println("Opcode: " + opcode);
+      System.out.println(" (" + lookup[opcode].name + ")");
       //String data = "Opcode: " + opcode + " (" + lookup[opcode].name + ")\n";
       //writer.write(data);
       //writer.close();

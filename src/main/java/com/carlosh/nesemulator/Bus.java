@@ -19,7 +19,7 @@ public class Bus {
     if (address >= 0x0000 && address <= 0x1FFF) {
       ram[address & 0x07FF] = data;
     } else if (address >= 0x2000 && address <= 0x3FFF) {
-      System.out.println("Writing");
+      //System.out.println("Writing");
       ppu.cpuWrite(address & 0x0007, data);
     } else if (address >= 0x4016 && address <= 0x4017) {
       controllerState[address & 0x0001] = controller[address & 0x0001];

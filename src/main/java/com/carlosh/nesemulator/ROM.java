@@ -118,16 +118,17 @@ public class ROM {
     return false;
   }
 
-  public boolean ppuRead(int address, boolean readOnly) {
+  public int ppuRead(int address) {
+    //System.out.println("PPU READ");
     int mappedAddress = mapper.ppuRead(address);
     if (mappedAddress != -1) {
-      int data = chrROM.get(mappedAddress);
-      return true;
+      return chrROM.get(mappedAddress);
     }
-    return false;
+    return -1;
   }
 
   public boolean ppuWrite(int address, int data) {
+    //System.out.println("PPU WRITE");
     int mappedAddress = mapper.ppuWrite(address);
     if (mappedAddress != -1) {
       chrROM.set(mappedAddress, data);

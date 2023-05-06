@@ -90,7 +90,7 @@ public class PPU {
       case 0x0002: {
         // Status
         data = (status.value & 0xE0) | (buffer & 0x1F);
-        status.write(status.value & 0x7F);
+        status.setVerticalBlank(false);
         whichByte = 0;
       }
       case 0x0003: {
@@ -108,8 +108,8 @@ public class PPU {
       case 0x0007: {
         // PPU Data
         data = buffer;
-        buffer = ppuRead(vramAddress.value, readOnly);
-        if (vramAddress.value > 0x3F00) {
+        buffer = ppuRead(vramAddress.value, false);
+        if (vramAddress.value >= 0x3F00) {
           data = buffer;
         }
         if (control.getIncrementMode() == 0) {
@@ -126,7 +126,7 @@ public class PPU {
 
   // TODO
   public void cpuWrite(int address, int data) {
-    System.out.println("CPU write: " + Integer.toHexString(address) + " " + Integer.toHexString(data));
+    //System.out.println("CPU write: " + Integer.toHexString(address) + " " + Integer.toHexString(data));
     switch (address) {
       case 0x0000: {
         // Control
@@ -186,8 +186,9 @@ public class PPU {
   // TODO
   public int ppuRead(int address, boolean readOnly) {
     address &= 0x3FFF;
-    if (rom.ppuRead(address, readOnly)) {
-      return 0x00;
+    int romData = rom.ppuRead(address);
+    if (romData != -1) {
+      return romData;
     }
     // Pattern memory
     else if (address <= 0x1FFF) {
