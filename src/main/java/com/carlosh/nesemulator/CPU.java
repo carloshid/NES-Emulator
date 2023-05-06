@@ -1,6 +1,5 @@
 package com.carlosh.nesemulator;
 
-import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.concurrent.Callable;
@@ -83,8 +82,8 @@ public class CPU {
 
   int status = 0x00;  // Status register
   int a = 0x00;  // Accumulator register
-  int x = 0x00;  // X register
-  int y = 0x00;  // Y register
+  int x_reg = 0x00;  // X register
+  int y_reg = 0x00;  // Y register
   int stkPtr = 0x00;  // Stack pointer
   int pc = 0x0000;  // Program counter
 
@@ -118,13 +117,13 @@ public class CPU {
   }
 
   public int ZPX() {
-    address_abs = (read(pc++) + x);
+    address_abs = (read(pc++) + x_reg);
     address_abs &= 0x00FF;
     return 0;
   }
 
   public int ZPY() {
-    address_abs = (read(pc++) + y);
+    address_abs = (read(pc++) + y_reg);
     address_abs &= 0x00FF;
     return 0;
   }
@@ -150,7 +149,7 @@ public class CPU {
     int low = read(pc++);
     int high = read(pc++);
     address_abs = (high << 8) | low;
-    address_abs += x;
+    address_abs += x_reg;
     if ((address_abs & 0xFF00) != (high << 8)) {
       return 1;
     }
@@ -161,7 +160,7 @@ public class CPU {
     int low = read(pc++);
     int high = read(pc++);
     address_abs = (high << 8) | low;
-    address_abs += y;
+    address_abs += y_reg;
     if ((address_abs & 0xFF00) != (high << 8)) {
       return 1;
     }
@@ -184,8 +183,8 @@ public class CPU {
 
   public int IZX() {
     int t = read(pc++);
-    int low = read((t + x) & 0x00FF);
-    int high = read((t + x + 1) & 0x00FF);
+    int low = read((t + x_reg) & 0x00FF);
+    int high = read((t + x_reg + 1) & 0x00FF);
     address_abs = (high << 8) | low;
     return 0;
   }
@@ -195,7 +194,7 @@ public class CPU {
     int low = read(t & 0x00FF);
     int high = read((t + 1) & 0x00FF);
     address_abs = (high << 8) | low;
-    address_abs += y;
+    address_abs += y_reg;
     if ((address_abs & 0xFF00) != (high << 8)) {
       return 1;
     }
@@ -485,8 +484,8 @@ public class CPU {
    * @return 0
    */
   public int CPX() {
-    int value = x - fetch();
-    setStatusFlag(StatusFlag.C, x >= value ? 1 : 0);
+    int value = x_reg - fetch();
+    setStatusFlag(StatusFlag.C, x_reg >= value ? 1 : 0);
     setStatusFlag(StatusFlag.Z, (value & 0x00FF) == 0 ? 1 : 0);
     setStatusFlag(StatusFlag.N, value & (1 << 7));
     return 0;
@@ -498,8 +497,8 @@ public class CPU {
    * @return 0
    */
   public int CPY() {
-    int value = y - fetch();
-    setStatusFlag(StatusFlag.C, y >= value ? 1 : 0);
+    int value = y_reg - fetch();
+    setStatusFlag(StatusFlag.C, y_reg >= value ? 1 : 0);
     setStatusFlag(StatusFlag.Z, (value & 0x00FF) == 0 ? 1 : 0);
     setStatusFlag(StatusFlag.N, value & (1 << 7));
     return 0;
@@ -524,9 +523,13 @@ public class CPU {
    * @return 0
    */
   public int DEX() {
-    x--;
-    setStatusFlag(StatusFlag.Z, x == 0 ? 1 : 0);
-    setStatusFlag(StatusFlag.N, x & (1 << 7));
+    if (x_reg == 0) {
+      x_reg = 0xFF;
+    } else {
+      x_reg--;
+    }
+    setStatusFlag(StatusFlag.Z, x_reg == 0 ? 1 : 0);
+    setStatusFlag(StatusFlag.N, x_reg & (1 << 7));
     return 0;
   }
 
@@ -536,9 +539,13 @@ public class CPU {
    * @return 0
    */
   public int DEY() {
-    y--;
-    setStatusFlag(StatusFlag.Z, y == 0 ? 1 : 0);
-    setStatusFlag(StatusFlag.N, y & (1 << 7));
+    if (y_reg == 0) {
+      y_reg = 0xFF;
+    } else {
+      y_reg--;
+    }
+    setStatusFlag(StatusFlag.Z, y_reg == 0 ? 1 : 0);
+    setStatusFlag(StatusFlag.N, y_reg & (1 << 7));
     return 0;
   }
 
@@ -573,9 +580,13 @@ public class CPU {
    * @return 0
    */
   public int INX() {
-    x++;
-    setStatusFlag(StatusFlag.Z, x == 0 ? 1 : 0);
-    setStatusFlag(StatusFlag.N, x & (1 << 7));
+    if (x_reg == 0xFF) {
+      x_reg = 0;
+    } else {
+      x_reg++;
+    }
+    setStatusFlag(StatusFlag.Z, x_reg == 0 ? 1 : 0);
+    setStatusFlag(StatusFlag.N, x_reg & (1 << 7));
     return 0;
   }
 
@@ -585,9 +596,13 @@ public class CPU {
    * @return 0
    */
   public int INY() {
-    y++;
-    setStatusFlag(StatusFlag.Z, y == 0 ? 1 : 0);
-    setStatusFlag(StatusFlag.N, y & (1 << 7));
+    if (y_reg == 0xFF) {
+      y_reg = 0;
+    } else {
+      y_reg++;
+    }
+    setStatusFlag(StatusFlag.Z, y_reg == 0 ? 1 : 0);
+    setStatusFlag(StatusFlag.N, y_reg & (1 << 7));
     return 0;
   }
 
@@ -631,9 +646,9 @@ public class CPU {
    * @return 1
    */
   public int LDX() {
-    x = fetch();
-    setStatusFlag(StatusFlag.Z, x == 0 ? 1 : 0);
-    setStatusFlag(StatusFlag.N, x & 0x80);
+    x_reg = fetch();
+    setStatusFlag(StatusFlag.Z, x_reg == 0 ? 1 : 0);
+    setStatusFlag(StatusFlag.N, x_reg & 0x80);
     return 1;
   }
 
@@ -643,9 +658,9 @@ public class CPU {
    * @return 1
    */
   public int LDY() {
-    y = fetch();
-    setStatusFlag(StatusFlag.Z, y == 0 ? 1 : 0);
-    setStatusFlag(StatusFlag.N, y & (1 << 7));
+    y_reg = fetch();
+    setStatusFlag(StatusFlag.Z, y_reg == 0 ? 1 : 0);
+    setStatusFlag(StatusFlag.N, y_reg & (1 << 7));
     return 1;
   }
 
@@ -838,43 +853,43 @@ public class CPU {
 
   // Store x register in memory.
   public int STX() {
-    write(address_abs, x);
+    write(address_abs, x_reg);
     return 0;
   }
 
   // Store y register in memory.
   public int STY() {
-    write(address_abs, y);
+    write(address_abs, y_reg);
     return 0;
   }
 
   // Transfer accumulator to x.
   public int TAX() {
-    x = a;
-    setStatusFlag(StatusFlag.Z, x == 0x00 ? 1 : 0);
-    setStatusFlag(StatusFlag.N, (x & 0x80) != 0 ? 1 : 0);
+    x_reg = a;
+    setStatusFlag(StatusFlag.Z, x_reg == 0x00 ? 1 : 0);
+    setStatusFlag(StatusFlag.N, (x_reg & 0x80) != 0 ? 1 : 0);
     return 0;
   }
 
   // Transfer accumulator to y.
   public int TAY() {
-    y = a;
-    setStatusFlag(StatusFlag.Z, y == 0x00 ? 1 : 0);
-    setStatusFlag(StatusFlag.N, (y & 0x80) != 0 ? 1 : 0);
+    y_reg = a;
+    setStatusFlag(StatusFlag.Z, y_reg == 0x00 ? 1 : 0);
+    setStatusFlag(StatusFlag.N, (y_reg & 0x80) != 0 ? 1 : 0);
     return 0;
   }
 
   // Transfer stack pointer to X.
   public int TSX() {
-    x = stkPtr;
-    setStatusFlag(StatusFlag.Z, x == 0x00 ? 1 : 0);
-    setStatusFlag(StatusFlag.N, (x & 0x80) != 0 ? 1 : 0);
+    x_reg = stkPtr;
+    setStatusFlag(StatusFlag.Z, x_reg == 0x00 ? 1 : 0);
+    setStatusFlag(StatusFlag.N, (x_reg & 0x80) != 0 ? 1 : 0);
     return 0;
   }
 
   // Transfer X to accumulator.
   public int TXA() {
-    a = x;
+    a = x_reg;
     setStatusFlag(StatusFlag.Z, a == 0x00 ? 1 : 0);
     setStatusFlag(StatusFlag.N, (a & 0x80) != 0 ? 1 : 0);
     return 0;
@@ -882,13 +897,13 @@ public class CPU {
 
   // Transfer X to stack pointer.
   public int TXS() {
-    stkPtr = x;
+    stkPtr = x_reg;
     return 0;
   }
 
   // Transfer Y to accumulator.
   public int TYA() {
-    a = y;
+    a = y_reg;
     setStatusFlag(StatusFlag.Z, a == 0x00 ? 1 : 0);
     setStatusFlag(StatusFlag.N, (a & 0x80) != 0 ? 1 : 0);
     return 0;
@@ -909,7 +924,7 @@ public class CPU {
       setStatusFlag(StatusFlag.U, 1);
 
       String data = "Opcode: " + opcode + " (" + lookup[opcode].name
-          + ") \t A: " + a + " \t X: " + x + " \t Y: " + y + " \tstkP: " + stkPtr
+          + ") \t A: " + a + " \t X: " + x_reg + " \t Y: " + y_reg + " \tstkP: " + stkPtr
           + " \tstatus: " + Integer.toBinaryString(status) + " \tPC: " + pc
           + ")\n";
 
@@ -943,8 +958,8 @@ public class CPU {
    */
   public void reset() {
     a = 0x00;
-    x = 0x00;
-    y = 0x00;
+    x_reg = 0x00;
+    y_reg = 0x00;
     stkPtr = 0xFD;
     status = 1 << StatusFlag.U.ordinal();
     pc = (read(0xFFFD) << 8) | read(0xFFFC);

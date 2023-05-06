@@ -9,6 +9,7 @@ target/
 
 # Ignore log files
 *.log
+output.txt
 
 # Ignore build artifacts
 build/
