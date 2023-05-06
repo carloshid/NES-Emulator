@@ -144,7 +144,7 @@ public class PPU {
         break;
       }
       case 0x0001: {
-        System.out.println("Writing to mask");
+        //System.out.println("Writing to mask");
         // Mask
         mask.write(data);
         break;
@@ -350,7 +350,7 @@ public class PPU {
     }
     color = getPaletteColor(bgPal, bgPixel);
     if (color != 0x545454) {
-      System.out.println(color);
+      //System.out.println(color);
     }
 
     drawPixel(currentX - 1, currentY, color);
@@ -362,12 +362,12 @@ public class PPU {
       if (currentY >= 261) {
         currentY = -1;
         ScreenNES.getInstance().updateScreen(pixels);
-        //try {
-        //  //System.out.println(++count);
-        //  //sleep(17);
-        //} catch (InterruptedException e) {
-        //  throw new RuntimeException(e);
-        //}
+        try {
+          //System.out.println(++count);
+          sleep(17);
+        } catch (InterruptedException e) {
+          throw new RuntimeException(e);
+        }
       }
     }
 

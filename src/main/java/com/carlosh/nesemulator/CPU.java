@@ -923,12 +923,12 @@ public class CPU {
       opcode = read(pc);
       setStatusFlag(StatusFlag.U, 1);
 
-      String data = "Opcode: " + opcode + " (" + lookup[opcode].name
-          + ") \t A: " + a + " \t X: " + x_reg + " \t Y: " + y_reg + " \tstkP: " + stkPtr
-          + " \tstatus: " + Integer.toBinaryString(status) + " \tPC: " + pc
-          + ")\n";
+      //String data = "Opcode: " + opcode + " (" + lookup[opcode].name
+      //    + ") \t A: " + a + " \t X: " + x_reg + " \t Y: " + y_reg + " \tstkP: " + stkPtr
+      //    + " \tstatus: " + Integer.toBinaryString(status) + " \tPC: " + pc
+      //    + ")\n";
 
-      log(data);
+      //log(data);
 
       pc++;
 
