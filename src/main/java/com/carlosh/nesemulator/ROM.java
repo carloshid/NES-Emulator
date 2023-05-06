@@ -103,15 +103,15 @@ public class ROM {
 
   public int cpuRead(int address, boolean readOnly) {
     int mappedAddress = mapper.cpuRead(address);
-    if (mappedAddress != -1) {
+    if (mappedAddress != -2) {
       return prgROM.get(mappedAddress);
     }
-    return -1;
+    return -2;
   }
 
   public boolean cpuWrite(int address, int data) {
     int mappedAddress = mapper.cpuWrite(address);
-    if (mappedAddress != -1) {
+    if (mappedAddress != -2) {
       prgROM.set(mappedAddress, data);
       return true;
     }
@@ -121,16 +121,17 @@ public class ROM {
   public int ppuRead(int address) {
     //System.out.println("PPU READ");
     int mappedAddress = mapper.ppuRead(address);
-    if (mappedAddress != -1) {
+    if (mappedAddress != -2) {
+      //System.out.println("mappedAddress " + mappedAddress);
       return chrROM.get(mappedAddress);
     }
-    return -1;
+    return -2;
   }
 
   public boolean ppuWrite(int address, int data) {
     //System.out.println("PPU WRITE");
     int mappedAddress = mapper.ppuWrite(address);
-    if (mappedAddress != -1) {
+    if (mappedAddress != -2) {
       chrROM.set(mappedAddress, data);
       return true;
     }

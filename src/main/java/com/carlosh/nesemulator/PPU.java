@@ -79,31 +79,38 @@ public class PPU {
 
   // TODO
   public int cpuRead(int address, boolean readOnly) {
-    int data = -1;
+    int data = 0;
     switch (address) {
       case 0x0000: {
         // Control
+        break;
       }
       case 0x0001: {
         // Mask
+        break;
       }
       case 0x0002: {
         // Status
         data = (status.value & 0xE0) | (buffer & 0x1F);
         status.setVerticalBlank(false);
         whichByte = 0;
+        break;
       }
       case 0x0003: {
         // OAM Address
+        break;
       }
       case 0x0004: {
         // OAM Data
+        break;
       }
       case 0x0005: {
         // Scroll
+        break;
       }
       case 0x0006: {
         // PPU Address
+        break;
       }
       case 0x0007: {
         // PPU Data
@@ -117,10 +124,11 @@ public class PPU {
         } else {
           vramAddress.value += 32;
         }
+        break;
       }
     }
 
-    assert data != -1;
+    //assert data != -2;
     return data;
   }
 
@@ -133,19 +141,25 @@ public class PPU {
         control.write(data);
         tramAddress.setNametableX(control.getNametableX());
         tramAddress.setNametableY(control.getNametableY());
+        break;
       }
       case 0x0001: {
+        System.out.println("Writing to mask");
         // Mask
         mask.write(data);
+        break;
       }
       case 0x0002: {
         // Status
+        break;
       }
       case 0x0003: {
         // OAM Address
+        break;
       }
       case 0x0004: {
         // OAM Data
+        break;
       }
       case 0x0005: {
         // Scroll
@@ -158,18 +172,20 @@ public class PPU {
           tramAddress.setCoarseY(data >> 3);
           whichByte = 0;
         }
+        break;
       }
       case 0x0006: {
         // PPU Address
-        tramAddress.value &= 0xFF00;
+        //tramAddress.value &= 0xFF00;
         if (whichByte == 0) {
-          tramAddress.value |= (data << 8);
+          tramAddress.value = ((data & 0x3F) << 8) | (tramAddress.value & 0x00FF);
           whichByte = 1;
         } else {
-          tramAddress.value |= data;
+          tramAddress.value = (tramAddress.value & 0xFF00) | data;
           vramAddress.value = tramAddress.value;
           whichByte = 0;
         }
+        break;
       }
       case 0x0007: {
         // PPU Data
@@ -179,6 +195,7 @@ public class PPU {
         } else {
           vramAddress.value += 32;
         }
+        break;
       }
     }
   }
@@ -187,7 +204,7 @@ public class PPU {
   public int ppuRead(int address, boolean readOnly) {
     address &= 0x3FFF;
     int romData = rom.ppuRead(address);
-    if (romData != -1) {
+    if (romData != -2) {
       return romData;
     }
     // Pattern memory
@@ -220,7 +237,7 @@ public class PPU {
       } else if (address == 0x001C) {
         address = 0x000C;
       }
-      return paletteTable[address];
+      return paletteTable[address] & (mask.getGrayscale() != 0 ? 0x30 : 0x3F);
     }
 
     return 0x00;
@@ -321,6 +338,7 @@ public class PPU {
     int bgPal = 0x00;
     int color = 0x000000;
     if (mask.getShowBackground() == 1) {
+      //System.out.println("getting color");
       int bitMux = 0x8000 >> fineX;
       int p0Pixel = (bgShifterPatternLo & bitMux) > 0 ? 1 : 0;
       int p1Pixel = (bgShifterPatternHi & bitMux) > 0 ? 1 : 0;
@@ -328,9 +346,12 @@ public class PPU {
       int bgPal0 = (bgShifterAttribLo & bitMux) > 0 ? 1 : 0;
       int bgPal1 = (bgShifterAttribHi & bitMux) > 0 ? 1 : 0;
       bgPal = (bgPal1 << 1) | bgPal0;
-      System.out.println(p0Pixel + " " + p1Pixel + " " + bgPal0 + " " + bgPal1);
+      //System.out.println(p0Pixel + " " + p1Pixel + " " + bgPal0 + " " + bgPal1);
     }
     color = getPaletteColor(bgPal, bgPixel);
+    if (color != 0x545454) {
+      System.out.println(color);
+    }
 
     drawPixel(currentX - 1, currentY, color);
 
@@ -341,12 +362,12 @@ public class PPU {
       if (currentY >= 261) {
         currentY = -1;
         ScreenNES.getInstance().updateScreen(pixels);
-        try {
-          //System.out.println(++count);
-          sleep(17);
-        } catch (InterruptedException e) {
-          throw new RuntimeException(e);
-        }
+        //try {
+        //  //System.out.println(++count);
+        //  //sleep(17);
+        //} catch (InterruptedException e) {
+        //  throw new RuntimeException(e);
+        //}
       }
     }
 
@@ -499,6 +520,7 @@ public class PPU {
 
     public MaskRegister() {
       value = 0x00;
+      this.setShowBackground(true);
     }
 
     public void write(int data) {
@@ -607,7 +629,7 @@ public class PPU {
     }
   }
 
-  // Inner class for the PPU's oam address register.
+  // Inner class for the PPU's loopy register.
   private class LoopyRegister {
     private int value;
 
