@@ -2,6 +2,7 @@ package com.carlosh.nesemulator;
 
 import java.io.FileOutputStream;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.util.concurrent.Callable;
 
 public class CPU {
@@ -129,9 +130,11 @@ public class CPU {
   }
 
   public int REL() {
-    address_rel = read(pc++);
+    address_rel = read(pc);
+    pc++;
     if ((address_rel & 0x80) != 0) {
-      address_rel |= 0xFF00;
+      //address_rel |= 0xFF00;
+      address_rel = -1 * Math.abs(address_rel - 256);
     }
     return 0;
   }
@@ -618,7 +621,7 @@ public class CPU {
   public int LDA() {
     a = fetch();
     setStatusFlag(StatusFlag.Z, a == 0 ? 1 : 0);
-    setStatusFlag(StatusFlag.N, a & (1 << 7));
+    setStatusFlag(StatusFlag.N, a & 0x80);
     return 1;
   }
 
@@ -630,7 +633,7 @@ public class CPU {
   public int LDX() {
     x = fetch();
     setStatusFlag(StatusFlag.Z, x == 0 ? 1 : 0);
-    setStatusFlag(StatusFlag.N, x & (1 << 7));
+    setStatusFlag(StatusFlag.N, x & 0x80);
     return 1;
   }
 
@@ -809,51 +812,85 @@ public class CPU {
     return 1;
   }
 
+  // Set carry flag.
   public int SEC() {
+    setStatusFlag(StatusFlag.C, 1);
     return 0;
   }
 
+  // Set decimal flag.
   public int SED() {
+    setStatusFlag(StatusFlag.D, 1);
     return 0;
   }
 
+  // Set interrupt flag.
   public int SEI() {
+    setStatusFlag(StatusFlag.I, 1);
     return 0;
   }
 
+  // Store accumulator in memory.
   public int STA() {
+    write(address_abs, a);
     return 0;
   }
 
+  // Store x register in memory.
   public int STX() {
+    write(address_abs, x);
     return 0;
   }
 
+  // Store y register in memory.
   public int STY() {
+    write(address_abs, y);
     return 0;
   }
 
+  // Transfer accumulator to x.
   public int TAX() {
+    x = a;
+    setStatusFlag(StatusFlag.Z, x == 0x00 ? 1 : 0);
+    setStatusFlag(StatusFlag.N, (x & 0x80) != 0 ? 1 : 0);
     return 0;
   }
 
+  // Transfer accumulator to y.
   public int TAY() {
+    y = a;
+    setStatusFlag(StatusFlag.Z, y == 0x00 ? 1 : 0);
+    setStatusFlag(StatusFlag.N, (y & 0x80) != 0 ? 1 : 0);
     return 0;
   }
 
+  // Transfer stack pointer to X.
   public int TSX() {
+    x = stkPtr;
+    setStatusFlag(StatusFlag.Z, x == 0x00 ? 1 : 0);
+    setStatusFlag(StatusFlag.N, (x & 0x80) != 0 ? 1 : 0);
     return 0;
   }
 
+  // Transfer X to accumulator.
   public int TXA() {
+    a = x;
+    setStatusFlag(StatusFlag.Z, a == 0x00 ? 1 : 0);
+    setStatusFlag(StatusFlag.N, (a & 0x80) != 0 ? 1 : 0);
     return 0;
   }
 
+  // Transfer X to stack pointer.
   public int TXS() {
+    stkPtr = x;
     return 0;
   }
 
+  // Transfer Y to accumulator.
   public int TYA() {
+    a = y;
+    setStatusFlag(StatusFlag.Z, a == 0x00 ? 1 : 0);
+    setStatusFlag(StatusFlag.N, (a & 0x80) != 0 ? 1 : 0);
     return 0;
   }
 
@@ -868,14 +905,17 @@ public class CPU {
    */
   public void clockCycle() throws Exception {
     if (cycles == 0) {
-      opcode = read(pc++);
-      //FileOutputStream outputStream = new FileOutputStream("output.txt");
-      //FileWriter writer = new FileWriter("output.txt", true);
-      System.out.println("Opcode: " + Integer.toHexString(opcode));
-      //System.out.println(" (" + lookup[opcode].name + ")");
-      //String data = "Opcode: " + opcode + " (" + lookup[opcode].name + ")\n";
-      //writer.write(data);
-      //writer.close();
+      opcode = read(pc);
+      setStatusFlag(StatusFlag.U, 1);
+
+      String data = "Opcode: " + opcode + " (" + lookup[opcode].name
+          + ") \t A: " + a + " \t X: " + x + " \t Y: " + y + " \tstkP: " + stkPtr
+          + " \tstatus: " + Integer.toBinaryString(status) + " \tPC: " + pc
+          + ")\n";
+
+      log(data);
+
+      pc++;
 
       cycles = lookup[opcode].cycles;
 
@@ -883,8 +923,19 @@ public class CPU {
       int additionalCycles2 = (int) lookup[opcode].opcode.call();
 
       cycles += (additionalCycles1 & additionalCycles2);
+      setStatusFlag(StatusFlag.U, 1);
     }
     cycles--;
+  }
+
+  private void log(String message) throws IOException {
+    //FileOutputStream outputStream = new FileOutputStream("output.txt");
+    FileWriter writer = new FileWriter("output.txt", true);
+    //System.out.println("Opcode: " + Integer.toHexString(opcode));
+    //System.out.println(" (" + lookup[opcode].name + ")");
+
+    writer.write(message);
+    writer.close();
   }
 
   /**
@@ -895,7 +946,7 @@ public class CPU {
     x = 0x00;
     y = 0x00;
     stkPtr = 0xFD;
-    status = 0x00;
+    status = 1 << StatusFlag.U.ordinal();
     pc = (read(0xFFFD) << 8) | read(0xFFFC);
     address_abs = 0x0000;
     address_rel = 0x00;
@@ -1040,7 +1091,7 @@ public class CPU {
     lookup[0x3C] = new Instruction("XXX", this::NOP, this::IMP, 4);
     lookup[0x3D] = new Instruction("AND", this::AND, this::ABX, 4);
     lookup[0x3E] = new Instruction("ROL", this::ROL, this::ABX, 7);
-    lookup[0x4F] = new Instruction("XXX", this::XXX, this::IMP, 7);
+    lookup[0x3F] = new Instruction("XXX", this::XXX, this::IMP, 7);
     lookup[0x40] = new Instruction("RTI", this::RTI, this::IMP, 6);
     lookup[0x41] = new Instruction("EOR", this::EOR, this::IZX, 6);
     lookup[0x42] = new Instruction("XXX", this::XXX, this::IMP, 2);

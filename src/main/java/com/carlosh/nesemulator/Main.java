@@ -45,7 +45,9 @@ public class Main extends Application {
     ROM rom = new ROM("nestest.nes"); // Change to the filename of the rom file
     Bus bus = new Bus();
     bus.addROM(rom);
-    //PPU ppu = new PPU();
+    bus.reset();
+    //PPU ppu = new
+    // PPU();
     //ppu.addROM(rom);
     Thread t = new Thread(new Runnable() {
       @Override
