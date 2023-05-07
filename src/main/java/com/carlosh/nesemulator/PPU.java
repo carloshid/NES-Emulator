@@ -304,7 +304,7 @@ public class PPU {
       status.setVerticalBlank(false);
     }
 
-    if ((currentX >= 2 && currentX < 258) || (currentX >= 321 && cycle < 338) && currentY < 240) {
+    if (((currentX >= 2 && currentX < 258) || (currentX >= 321 && cycle < 338)) && currentY < 240) {
       updateBackgroundShifters();
       prepareBackground((currentX - 1) % 8);
     }
