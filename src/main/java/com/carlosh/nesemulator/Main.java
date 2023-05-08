@@ -42,7 +42,7 @@ public class Main extends Application {
     stage.setScene(scene);
     stage.show();
 
-    ROM rom = new ROM("rom.nes"); // Change to the filename of the rom file
+    ROM rom = new ROM("nestest.nes"); // Change to the filename of the rom file
     Bus bus = new Bus();
     bus.addROM(rom);
     bus.reset();

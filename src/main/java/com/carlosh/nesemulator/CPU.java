@@ -319,8 +319,8 @@ public class CPU {
   public int BIT() {
     int value = a & fetch();
     setStatusFlag(StatusFlag.Z, (value & 0x00FF) == 0 ? 1 : 0);
-    setStatusFlag(StatusFlag.N, value & (1 << 7));
-    setStatusFlag(StatusFlag.V, value & (1 << 6));
+    setStatusFlag(StatusFlag.N, fetched & (1 << 7));
+    setStatusFlag(StatusFlag.V, fetched & (1 << 6));
     return 0;
   }
 
@@ -472,7 +472,7 @@ public class CPU {
    */
   public int CMP() {
     int value = a - fetch();
-    setStatusFlag(StatusFlag.C, a >= value ? 1 : 0);
+    setStatusFlag(StatusFlag.C, a >= fetched ? 1 : 0);
     setStatusFlag(StatusFlag.Z, (value & 0x00FF) == 0 ? 1 : 0);
     setStatusFlag(StatusFlag.N, value & (1 << 7));
     return 1;
@@ -485,7 +485,7 @@ public class CPU {
    */
   public int CPX() {
     int value = x_reg - fetch();
-    setStatusFlag(StatusFlag.C, x_reg >= value ? 1 : 0);
+    setStatusFlag(StatusFlag.C, x_reg >= fetched ? 1 : 0);
     setStatusFlag(StatusFlag.Z, (value & 0x00FF) == 0 ? 1 : 0);
     setStatusFlag(StatusFlag.N, value & (1 << 7));
     return 0;
@@ -498,7 +498,7 @@ public class CPU {
    */
   public int CPY() {
     int value = y_reg - fetch();
-    setStatusFlag(StatusFlag.C, y_reg >= value ? 1 : 0);
+    setStatusFlag(StatusFlag.C, y_reg >= fetched ? 1 : 0);
     setStatusFlag(StatusFlag.Z, (value & 0x00FF) == 0 ? 1 : 0);
     setStatusFlag(StatusFlag.N, value & (1 << 7));
     return 0;
@@ -622,7 +622,8 @@ public class CPU {
    * @return 0
    */
   public int JSR() {
-    write(0x0100 + stkPtr--, (--pc >> 8) & 0x00FF);
+    pc--;
+    write(0x0100 + stkPtr--, (pc >> 8) & 0x00FF);
     write(0x0100 + stkPtr--, pc & 0x00FF);
     pc = address_abs;
     return 0;
@@ -671,7 +672,7 @@ public class CPU {
    */
   public int LSR() {
     int value = fetch() >> 1;
-    setStatusFlag(StatusFlag.C, (value & 0x0001) != 0 ? 1 : 0);
+    setStatusFlag(StatusFlag.C, (fetched & 0x0001) != 0 ? 1 : 0);
     setStatusFlag(StatusFlag.Z, (value & 0x00FF) == 0 ? 1 : 0);
     setStatusFlag(StatusFlag.N, value & (1 << 7));
     if (lookup[opcode].addressMode == (Callable) this::IMP) {
@@ -776,7 +777,7 @@ public class CPU {
    */
   public int ROR() {
     int value = (fetch() >> 1) | (getStatusFlag(StatusFlag.C) << 7);
-    setStatusFlag(StatusFlag.C, (value & 0x0001) != 0 ? 1 : 0);
+    setStatusFlag(StatusFlag.C, (fetched & 0x0001) != 0 ? 1 : 0);
     setStatusFlag(StatusFlag.Z, (value & 0x00FF) == 0 ? 1 : 0);
     setStatusFlag(StatusFlag.N, value & (1 << 7));
     if (lookup[opcode].addressMode == (Callable) this::IMP) {
@@ -928,7 +929,6 @@ public class CPU {
 //          + " \tstatus: " + Integer.toBinaryString(status) + " \tPC: " + pc
 //          + ")\n";
 
-      //log(data);
 
       //System.out.println(data);
 
@@ -936,8 +936,21 @@ public class CPU {
 
       cycles = lookup[opcode].cycles;
 
+//      log("P1: " + opcode + " " + lookup[opcode].name + "\tA: " + a + "\tX: " + x_reg + "\tY: " + y_reg
+//          + "\tstkP: " + stkPtr + "\tPC: " + pc + "\tAbs: " + address_abs + "\tRel: "
+//          + address_rel + "\n");
+
       int additionalCycles1 = (int) lookup[opcode].addressMode.call();
+
+//      log("P2: " + opcode + " " + lookup[opcode].name + "\tA: " + a + "\tX: " + x_reg + "\tY: " + y_reg
+//          + "\tstkP: " + stkPtr + "\tPC: " + pc + "\tAbs: " + address_abs + "\tRel: "
+//          + address_rel + "\n");
+
       int additionalCycles2 = (int) lookup[opcode].opcode.call();
+
+//      log("P3: " + opcode + " " + lookup[opcode].name + "\tA: " + a + "\tX: " + x_reg + "\tY: " + y_reg
+//          + "\tstkP: " + stkPtr + "\tPC: " + pc + "\tAbs: " + address_abs + "\tRel: "
+//          + address_rel + "\n");
 
       cycles += (additionalCycles1 & additionalCycles2);
       setStatusFlag(StatusFlag.U, 1);
@@ -946,11 +959,7 @@ public class CPU {
   }
 
   private void log(String message) throws IOException {
-    //FileOutputStream outputStream = new FileOutputStream("output.txt");
     FileWriter writer = new FileWriter("output.txt", true);
-    //System.out.println("Opcode: " + Integer.toHexString(opcode));
-    //System.out.println(" (" + lookup[opcode].name + ")");
-
     writer.write(message);
     writer.close();
   }
@@ -982,6 +991,7 @@ public class CPU {
       setStatusFlag(StatusFlag.U, 1);
       setStatusFlag(StatusFlag.I, 1);
       write((0x0100 + stkPtr--), status);
+      address_abs = 0xFFFE;
       pc = (read(0xFFFF) << 8) | read(0xFFFE);
       cycles = 7;
     }
@@ -997,6 +1007,9 @@ public class CPU {
     setStatusFlag(StatusFlag.U, 1);
     setStatusFlag(StatusFlag.I, 1);
     write((0x0100 + stkPtr--), status);
+
+    address_abs = 0xFFFA;
+
     pc = (read(0xFFFB) << 8) | read(0xFFFA);
     cycles = 8;
   }

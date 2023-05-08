@@ -66,7 +66,6 @@ public class PPU {
 
 
   private int count = 0;
-  private int cycle = 0;
   private boolean nmi = false;
 
   public int[][] pixels = new int[ScreenNES.NES_WIDTH][ScreenNES.NES_HEIGHT];
@@ -297,34 +296,36 @@ public class PPU {
   }
 
   public void clock() {
-    if (currentY == 0 && currentX == 0) {
-      currentX = 1;
-    }
+    if (currentY >= -1 && currentY < 240) {
+      if (currentY == 0 && currentX == 0) {
+        currentX = 1;
+      }
 
-    if (currentY == -1 && currentX == 1) {
-      status.setVerticalBlank(false);
-    }
+      if (currentY == -1 && currentX == 1) {
+        status.setVerticalBlank(false);
+      }
 
-    if (((currentX >= 2 && currentX < 258) || (currentX >= 321 && cycle < 338)) && currentY < 240) {
-      updateBackgroundShifters();
-      prepareBackground((currentX - 1) % 8);
-    }
+      if ((currentX >= 2 && currentX < 258) || (currentX >= 321 && currentX < 338)) {
+        updateBackgroundShifters();
+        prepareBackground((currentX - 1) % 8);
+      }
 
-    if (currentX == 256 && currentY < 240) {
-      incrementY();
-    }
+      if (currentX == 256) {
+        incrementY();
+      }
 
-    if (currentX == 257 && currentY < 240) {
-      loadBackgroundShifters();
-      copyX();
-    }
+      if (currentX == 257) {
+        loadBackgroundShifters();
+        copyX();
+      }
 
-    if ((currentX == 338 || currentX == 340) && currentY < 240) {
-      bgNextTileId = ppuRead(0x2000 | (vramAddress.value & 0x0FFF), false);
-    }
+      if (currentX == 338 || currentX == 340) {
+        bgNextTileId = ppuRead(0x2000 | (vramAddress.value & 0x0FFF), false);
+      }
 
-    if (currentY == -1 && currentX >= 280 && currentX < 305) {
-      copyY();
+      if (currentY == -1 && currentX >= 280 && currentX < 305) {
+        copyY();
+      }
     }
 
     if (currentY == 241 && currentX == 1) {
