@@ -1,8 +1,10 @@
 package com.carlosh.nesemulator;
 
+import com.carlosh.nesemulator.ui.ScreenNES;
 import java.util.Arrays;
 
 public class Bus {
+  public static Bus bus;
 
   private PPU ppu;
   private CPU cpu;
@@ -23,6 +25,7 @@ public class Bus {
       //System.out.println("Writing ppu.cpuWrite: " + (address & 0x0007) + " " + data);
       ppu.cpuWrite(address & 0x0007, data);
     } else if (address >= 0x4016 && address <= 0x4017) {
+      //System.out.println("BBBB");
       controllerState[address & 0x0001] = controller[address & 0x0001];
     }
   }
@@ -45,9 +48,10 @@ public class Bus {
       //System.out.println("Reading ram 3: " + data + " Address: " + (address & 0x0007));
       return data;
     } else if (address >= 0x4016 && address <= 0x4017) {
+      //System.out.println("AAAAAA");
       data = (controllerState[address & 0x0001] & 0x80) > 0 ? 1 : 0;
       controllerState[address & 0x0001] <<= 1;
-      //System.out.println("Reading ram 4: " + data);
+      //System.out.println("Reading controller: " + data);
       return data;
     }
     return 0x00;
@@ -58,6 +62,11 @@ public class Bus {
     cpu = CPU.instance;
     cpu.connectBus(this);
     ppu = PPU.instance;
+    Bus.bus = this;
+    controller[0] = 0;
+    controller[1] = 0;
+    controllerState[0] = 0;
+    controllerState[1] = 0;
   }
 
   public void addROM(ROM rom) {
@@ -72,6 +81,7 @@ public class Bus {
   }
 
   public void clock() {
+    //bus.controller[0] = KeyController.instance.state;
     ppu.clock();
     if (clockCounter % 3 == 0) {
       try {

@@ -39,6 +39,7 @@ public class PPU {
   private int bgShifterPatternHi = 0x0000;
   private int bgShifterAttribLo = 0x0000;
   private int bgShifterAttribHi = 0x0000;
+  public boolean ready = false;
 
   // Color palette containing 64 colors (10 of them are just black (0x000000))
   private int[] colorPalette2 = new int[] {
@@ -68,7 +69,7 @@ public class PPU {
   private int cycle = 0;
   private boolean nmi = false;
 
-  private int[][] pixels = new int[ScreenNES.NES_WIDTH][ScreenNES.NES_HEIGHT];
+  public int[][] pixels = new int[ScreenNES.NES_WIDTH][ScreenNES.NES_HEIGHT];
   private int currentX = 0;
   private int currentY = 0;
 
@@ -361,13 +362,14 @@ public class PPU {
       currentY++;
       if (currentY >= 261) {
         currentY = -1;
-        ScreenNES.getInstance().updateScreen(pixels);
-        try {
-          //System.out.println(++count);
-          sleep(17);
-        } catch (InterruptedException e) {
-          throw new RuntimeException(e);
-        }
+        //ScreenNES.getInstance().updateScreen(pixels);
+        ready = true;
+//        try {
+//          //System.out.println(++count);
+//          sleep(17);
+//        } catch (InterruptedException e) {
+//          throw new RuntimeException(e);
+//        }
       }
     }
 

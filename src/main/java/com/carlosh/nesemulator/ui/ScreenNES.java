@@ -1,5 +1,6 @@
 package com.carlosh.nesemulator.ui;
 
+import com.carlosh.nesemulator.KeyController;
 import java.awt.image.BufferedImage;
 import javafx.application.Platform;
 import javafx.embed.swing.SwingFXUtils;
@@ -21,6 +22,13 @@ public class ScreenNES extends Canvas {
   public ScreenNES() {
     super(NES_WIDTH * SCALE, NES_HEIGHT * SCALE);
     instance = this;
+    this.setFocusTraversable(true);
+//    this.setOnKeyPressed(e -> {
+//      System.out.println("A");
+//      KeyController.instance.keyPressed(e);
+//    });
+    this.setOnKeyPressed(KeyController.instance::keyPressed);
+    this.setOnKeyReleased(KeyController.instance::keyReleased);
   }
 
   Color black = Color.rgb(0, 0, 0);
@@ -46,25 +54,28 @@ public class ScreenNES extends Canvas {
 
   public void updateScreen(int[][] pixels) {
     //Platform.runLater(() -> {
-    GraphicsContext gc = getGraphicsContext2D();
+      GraphicsContext gc = getGraphicsContext2D();
 
-    BufferedImage image = new BufferedImage(NES_WIDTH * SCALE, NES_HEIGHT * SCALE, BufferedImage.TYPE_INT_RGB);
-    for (int x = 0; x < NES_WIDTH; x++) {
-      for (int y = 0; y < NES_HEIGHT; y++) {
+      BufferedImage image = new BufferedImage(NES_WIDTH * SCALE, NES_HEIGHT * SCALE, BufferedImage.TYPE_INT_RGB);
+      for (int x = 0; x < NES_WIDTH; x++) {
+        for (int y = 0; y < NES_HEIGHT; y++) {
 
-        int startx = (x * SCALE);
-        int starty = (y * SCALE);
+          int startx = (x * SCALE);
+          int starty = (y * SCALE);
 
-        for (int i = startx; i < startx + SCALE; i++) {
-          for (int j = starty; j < starty + SCALE; j++) {
-            image.setRGB(i, j, pixels[x][y]);
+          for (int i = startx; i < startx + SCALE; i++) {
+            for (int j = starty; j < starty + SCALE; j++) {
+              image.setRGB(i, j, pixels[x][y]);
+            }
           }
         }
       }
-    }
+      Image fxImage = SwingFXUtils.toFXImage(image, null);
+      gc.drawImage(fxImage, 0, 0);
+    //});
 
-    Image fxImage = SwingFXUtils.toFXImage(image, null);
-    gc.drawImage(fxImage, 0, 0);
+
+
   }
 
 
