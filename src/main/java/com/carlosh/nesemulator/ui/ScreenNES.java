@@ -27,8 +27,8 @@ public class ScreenNES extends Canvas {
 //      System.out.println("A");
 //      KeyController.instance.keyPressed(e);
 //    });
-    this.setOnKeyPressed(KeyController.instance::keyPressed);
-    this.setOnKeyReleased(KeyController.instance::keyReleased);
+    this.setOnKeyPressed(KeyController.controller0::keyPressed);
+    this.setOnKeyReleased(KeyController.controller0::keyReleased);
   }
 
   Color black = Color.rgb(0, 0, 0);

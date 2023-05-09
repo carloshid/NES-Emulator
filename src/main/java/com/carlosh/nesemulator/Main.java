@@ -76,8 +76,8 @@ public class Main extends Application {
           } else {
             res += (1.0/ 60.0) - elapsedTime;
             //System.out.println(KeyController.instance.state);
-            Bus.bus.controller[0] = KeyController.instance.state;
-            Bus.bus.controller[1] = KeyController.instance.state;
+            Bus.bus.controller[0] = KeyController.controller0.state;
+            Bus.bus.controller[1] = KeyController.controller1.state;
             while (!PPU.instance.ready) {
               bus.clock();
             }
