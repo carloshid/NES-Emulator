@@ -79,6 +79,7 @@ public class PPU {
 
   // TODO
   public int cpuRead(int address, boolean readOnly) {
+    CPU.log("CPU read: " + address + "\n");
     int data = 0;
     switch (address) {
       case 0x0000: {
@@ -134,7 +135,7 @@ public class PPU {
 
   // TODO
   public void cpuWrite(int address, int data) {
-    //System.out.println("CPU write: " + Integer.toHexString(address) + " " + Integer.toHexString(data));
+    CPU.log("CPU write: " + address + " " + data + "\n");
     switch (address) {
       case 0x0000: {
         // Control
@@ -202,6 +203,7 @@ public class PPU {
 
   // TODO
   public int ppuRead(int address, boolean readOnly) {
+    CPU.log("PPU read: " + address + "\n");
     address &= 0x3FFF;
     int romData = rom.ppuRead(address);
     if (romData != -2) {
@@ -245,6 +247,7 @@ public class PPU {
 
   // TODO
   public void ppuWrite(int address, int data) {
+    CPU.log("PPU write: " + address + " " + data + "\n");
     address &= 0x3FFF;
     if (rom.ppuWrite(address, data)) {
       return;
@@ -296,6 +299,7 @@ public class PPU {
   }
 
   public void clock() {
+    CPU.log("PPU clock with X: " + currentX + " and Y: " + currentY + "\n");
     if (currentY >= -1 && currentY < 240) {
       if (currentY == 0 && currentX == 0) {
         currentX = 1;
@@ -747,6 +751,7 @@ public class PPU {
 
   private void prepareBackground(int step) {
     assert step >= 0 && step <= 7;
+    CPU.log("Preparing background for step: " + step + "\n");
     if (step == 0) {
       loadBackgroundShifters();
       bgNextTileId = ppuRead(0x2000 | (vramAddress.value & 0x0FFF), false);
