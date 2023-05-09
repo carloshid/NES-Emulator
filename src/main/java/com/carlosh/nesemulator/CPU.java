@@ -106,34 +106,64 @@ public class CPU {
   }
 
   // Addressing modes
+  /**
+   * Implied.
+   *
+   * @return 0
+   */
   public int IMP() {
     fetched = a;
     return 0;
   }
 
+  /**
+   * Immediate.
+   *
+   * @return 0
+   */
   public int IMM() {
     address_abs = pc++;
     return 0;
   }
 
+  /**
+   * Zero page.
+   *
+   * @return 0
+   */
   public int ZP0() {
     address_abs = read(pc++);
     address_abs &= 0x00FF;
     return 0;
   }
 
+  /**
+   * Zero page, x offset.
+   *
+   * @return 0
+   */
   public int ZPX() {
     address_abs = (read(pc++) + x_reg);
     address_abs &= 0x00FF;
     return 0;
   }
 
+  /**
+   * Zero page, y offset.
+   *
+   * @return 0
+   */
   public int ZPY() {
     address_abs = (read(pc++) + y_reg);
     address_abs &= 0x00FF;
     return 0;
   }
 
+  /**
+   * Relative.
+   *
+   * @return 0
+   */
   public int REL() {
     address_rel = read(pc);
     pc++;
@@ -144,6 +174,11 @@ public class CPU {
     return 0;
   }
 
+  /**
+   * Absolute.
+   *
+   * @return 0
+   */
   public int ABS() {
     int low = read(pc++);
     int high = read(pc++);
@@ -151,6 +186,11 @@ public class CPU {
     return 0;
   }
 
+  /**
+   * Absolute, x offset.
+   *
+   * @return 1 if page boundary is crossed, 0 otherwise.
+   */
   public int ABX() {
     int low = read(pc++);
     int high = read(pc++);
@@ -162,17 +202,30 @@ public class CPU {
     return 0;
   }
 
+  /**
+   * Absolute, y offset.
+   *
+   * @return 1 if page boundary is crossed, 0 otherwise.
+   */
   public int ABY() {
     int low = read(pc++);
     int high = read(pc++);
     address_abs = (high << 8) | low;
     address_abs += y_reg;
+    if (address_abs > 0xFFFF) {
+      address_abs &= 0xFFFF;
+    }
     if ((address_abs & 0xFF00) != (high << 8)) {
       return 1;
     }
     return 0;
   }
 
+  /**
+   * Indirect.
+   *
+   * @return 0
+   */
   public int IND() {
     int ptr_low = read(pc++);
     int ptr_high = read(pc++);
@@ -187,6 +240,11 @@ public class CPU {
     return 0;
   }
 
+  /**
+   * Indirect, x offset.
+   *
+   * @return 0
+   */
   public int IZX() {
     int t = read(pc++);
     int low = read((t + x_reg) & 0x00FF);
@@ -195,12 +253,20 @@ public class CPU {
     return 0;
   }
 
+  /**
+   * Indirect, y offset.
+   *
+   * @return 1 if page boundary is crossed, 0 otherwise.
+   */
   public int IZY() {
     int t = read(pc++);
     int low = read(t & 0x00FF);
     int high = read((t + 1) & 0x00FF);
     address_abs = (high << 8) | low;
     address_abs += y_reg;
+    if (address_abs > 0xFFFF) {
+      address_abs &= 0xFFFF;
+    }
     if ((address_abs & 0xFF00) != (high << 8)) {
       return 1;
     }
