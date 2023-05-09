@@ -4,6 +4,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
+/**
+ * The CPU of the NES.
+ */
 public class CPU {
 
   /**
@@ -16,6 +19,8 @@ public class CPU {
   }
 
   private Bus bus;
+
+  public boolean enableLogs = false; // Change to true to enable logs for debugging if needed
 
   /**
    * Connect the CPU to the bus.
@@ -33,21 +38,23 @@ public class CPU {
    * @return The data read from the bus.
    */
   public int read(int address) {
-
-    log("Reading from address " + address + "\n");
+    if (enableLogs) {
+      log("Reading from address " + address + "\n");
+    }
 
     return bus.read(address, false);
   }
 
-    /**
-     * Write to the bus.
-     *
-     * @param address The address to write to.
-     * @param data The data to write to the bus.
-     */
+  /**
+   * Write to the bus.
+   *
+   * @param address The address to write to.
+   * @param data The data to write to the bus.
+   */
   public void write(int address, int data) {
-
-    log("Writing to address " + address + " data " + data + "\n");
+    if (enableLogs) {
+      log("Writing to address " + address + " data " + data + "\n");
+    }
 
     bus.write(address, data);
   }
@@ -86,12 +93,12 @@ public class CPU {
     }
   }
 
-  int status = 0x00;  // Status register
-  int a = 0x00;  // Accumulator register
-  int x_reg = 0x00;  // X register
-  int y_reg = 0x00;  // Y register
-  int stkPtr = 0x00;  // Stack pointer
-  int pc = 0x0000;  // Program counter
+  private int status = 0x00;  // Status register
+  private int a = 0x00;  // Accumulator register
+  private int x_reg = 0x00;  // X register
+  private int y_reg = 0x00;  // Y register
+  private int stkPtr = 0x00;  // Stack pointer
+  private int pc = 0x0000;  // Program counter
 
   private int getStatusFlag(StatusFlag flag) {
     return (status >> flag.bit) & 1;
@@ -168,7 +175,6 @@ public class CPU {
     address_rel = read(pc);
     pc++;
     if ((address_rel & 0x80) != 0) {
-      //address_rel |= 0xFF00;
       address_rel = -1 * Math.abs(address_rel - 256);
     }
     return 0;
@@ -867,10 +873,8 @@ public class CPU {
    */
   public int RTI() {
     status = read(0x0100 + ++stkPtr);
-    //System.out.println(Integer.toBinaryString(status) + " " + Integer.toBinaryString(1 << StatusFlag.B.ordinal()) + " " + Integer.toBinaryString(~(1 << StatusFlag.B.ordinal())));
     status &= ~(1 << StatusFlag.B.ordinal());
     status &= ~(1 << StatusFlag.U.ordinal());
-    //System.out.println(Integer.toBinaryString(status));
     pc = read(0x0100 + ++stkPtr);
     pc |= (read(0x0100 + ++stkPtr) << 8);
     return 0;
@@ -900,43 +904,71 @@ public class CPU {
     return 1;
   }
 
-  // Set carry flag.
+  /**
+   * Set carry flag.
+   *
+   * @return 0
+   */
   public int SEC() {
     setStatusFlag(StatusFlag.C, 1);
     return 0;
   }
 
-  // Set decimal flag.
+  /**
+   * Set decimal flag.
+   *
+   * @return 0
+   */
   public int SED() {
     setStatusFlag(StatusFlag.D, 1);
     return 0;
   }
 
-  // Set interrupt flag.
+  /**
+   * Set interrupt flag.
+   *
+   * @return 0
+   */
   public int SEI() {
     setStatusFlag(StatusFlag.I, 1);
     return 0;
   }
 
-  // Store accumulator in memory.
+  /**
+   * Store accumulator in memory.
+   *
+   * @return 0
+   */
   public int STA() {
     write(address_abs, a);
     return 0;
   }
 
-  // Store x register in memory.
+  /**
+   * Store x register in memory.
+   *
+   * @return 0
+   */
   public int STX() {
     write(address_abs, x_reg);
     return 0;
   }
 
-  // Store y register in memory.
+  /**
+   * Store y register in memory.
+   *
+   * @return 0
+   */
   public int STY() {
     write(address_abs, y_reg);
     return 0;
   }
 
-  // Transfer accumulator to x.
+  /**
+   * Transfer accumulator to x.
+   *
+   * @return 0
+   */
   public int TAX() {
     x_reg = a;
     setStatusFlag(StatusFlag.Z, x_reg == 0x00 ? 1 : 0);
@@ -944,7 +976,11 @@ public class CPU {
     return 0;
   }
 
-  // Transfer accumulator to y.
+  /**
+   * Transfer accumulator to y.
+   *
+   * @return 0
+   */
   public int TAY() {
     y_reg = a;
     setStatusFlag(StatusFlag.Z, y_reg == 0x00 ? 1 : 0);
@@ -952,7 +988,11 @@ public class CPU {
     return 0;
   }
 
-  // Transfer stack pointer to X.
+  /**
+   * Transfer stack pointer to x.
+   *
+   * @return 0
+   */
   public int TSX() {
     x_reg = stkPtr;
     setStatusFlag(StatusFlag.Z, x_reg == 0x00 ? 1 : 0);
@@ -960,7 +1000,11 @@ public class CPU {
     return 0;
   }
 
-  // Transfer X to accumulator.
+  /**
+   * Transfer x to accumulator.
+   *
+   * @return 0
+   */
   public int TXA() {
     a = x_reg;
     setStatusFlag(StatusFlag.Z, a == 0x00 ? 1 : 0);
@@ -968,13 +1012,21 @@ public class CPU {
     return 0;
   }
 
-  // Transfer X to stack pointer.
+  /**
+   * Transfer x to stack pointer.
+   *
+   * @return 0
+   */
   public int TXS() {
     stkPtr = x_reg;
     return 0;
   }
 
-  // Transfer Y to accumulator.
+  /**
+   * Transfer y to accumulator.
+   *
+   * @return 0
+   */
   public int TYA() {
     a = y_reg;
     setStatusFlag(StatusFlag.Z, a == 0x00 ? 1 : 0);
@@ -982,6 +1034,11 @@ public class CPU {
     return 0;
   }
 
+  /**
+   * Illegal opcodes. Do nothing.
+   *
+   * @return 0
+   */
   public int XXX() {
     return 0;
   }
@@ -995,34 +1052,30 @@ public class CPU {
     if (cycles == 0) {
       opcode = read(pc);
       setStatusFlag(StatusFlag.U, 1);
-
-//      String data = "Opcode: " + opcode + " (" + lookup[opcode].name
-//          + ") \t A: " + a + " \t X: " + x_reg + " \t Y: " + y_reg + " \tstkP: " + stkPtr
-//          + " \tstatus: " + Integer.toBinaryString(status) + " \tPC: " + pc
-//          + ")\n";
-
-
-      //System.out.println(data);
-
       pc++;
-
       cycles = lookup[opcode].cycles;
 
-      log("P1: " + opcode + " " + lookup[opcode].name + "\tA: " + a + "\tX: " + x_reg + "\tY: " + y_reg
-          + "\tstkP: " + stkPtr + "\tPC: " + pc + "\tAbs: " + address_abs + "\tRel: "
-          + address_rel + "\n");
+      if (enableLogs) {
+        log("P1: " + opcode + " " + lookup[opcode].name + "\tA: " + a + "\tX: " + x_reg + "\tY: " + y_reg
+            + "\tstkP: " + stkPtr + "\tPC: " + pc + "\tAbs: " + address_abs + "\tRel: "
+            + address_rel + "\n");
+      }
 
-      int additionalCycles1 = (int) lookup[opcode].addressMode.call();
+      int additionalCycles1 = lookup[opcode].addressMode.call();
 
-      log("P2: " + opcode + " " + lookup[opcode].name + "\tA: " + a + "\tX: " + x_reg + "\tY: " + y_reg
-          + "\tstkP: " + stkPtr + "\tPC: " + pc + "\tAbs: " + address_abs + "\tRel: "
-          + address_rel + "\n");
+      if (enableLogs) {
+        log("P2: " + opcode + " " + lookup[opcode].name + "\tA: " + a + "\tX: " + x_reg + "\tY: " + y_reg
+            + "\tstkP: " + stkPtr + "\tPC: " + pc + "\tAbs: " + address_abs + "\tRel: "
+            + address_rel + "\n");
+      }
 
-      int additionalCycles2 = (int) lookup[opcode].opcode.call();
+      int additionalCycles2 = lookup[opcode].opcode.call();
 
-      log("P3: " + opcode + " " + lookup[opcode].name + "\tA: " + a + "\tX: " + x_reg + "\tY: " + y_reg
-          + "\tstkP: " + stkPtr + "\tPC: " + pc + "\tAbs: " + address_abs + "\tRel: "
-          + address_rel + "\n");
+      if (enableLogs) {
+        log("P3: " + opcode + " " + lookup[opcode].name + "\tA: " + a + "\tX: " + x_reg + "\tY: " + y_reg
+            + "\tstkP: " + stkPtr + "\tPC: " + pc + "\tAbs: " + address_abs + "\tRel: "
+            + address_rel + "\n");
+      }
 
       cycles += (additionalCycles1 & additionalCycles2);
       setStatusFlag(StatusFlag.U, 1);
@@ -1030,24 +1083,29 @@ public class CPU {
     cycles--;
   }
 
-  private static String messageBuffer = "";
-  private static int messageCount = 0;
+  private static String messageBuffer = ""; // Buffer for messages to write to disk
+  private static int messageCount = 0; // Current amount of messages in the buffer
+  private static int countThreshhold = 10000; // Change how often to write to disk
+
+  /**
+   * Log a message to use for debugging. Writes them to disk to a file called output.txt.
+   *
+   * @param message the message to log
+   */
   public static void log(String message) {
-    if (true) {
+    if (!instance.enableLogs) {
       return;
     }
     messageBuffer += message;
     messageCount++;
-    if (messageCount > 10000) {
+    if (messageCount > countThreshhold) {
       writeToDisk(messageBuffer);
       messageBuffer = "";
       messageCount = 0;
     }
-
-
   }
 
-  public static void writeToDisk(String message) {
+  private static void writeToDisk(String message) {
     FileWriter writer = null;
     try {
       writer = new FileWriter("output.txt", true);
@@ -1116,11 +1174,13 @@ public class CPU {
     pc = (read(0xFFFB) << 8) | read(0xFFFA);
     cycles = 8;
 
-    CPU.log("NMI after: PC: : " + pc + "stkPtr: " + stkPtr + " Abs: " + address_abs + "\n");
+    if (enableLogs) {
+      CPU.log("NMI after: PC: : " + pc + "stkPtr: " + stkPtr + " Abs: " + address_abs + "\n");
+    }
   }
 
   /**
-   * Value to store the fetched value.
+   * Variable to store the fetched value.
    */
   public int fetched = 0x00;
 
@@ -1131,19 +1191,16 @@ public class CPU {
    * @return the fetched value
    */
   public int fetch() {
-//    if (!(lookup[opcode].addressMode == (Callable<Integer>) this::IMP)) {
-//      fetched = read(address_abs);
-//    }
     if (!(lookup[opcode].addressModeStr.equals("IMP"))) {
       fetched = read(address_abs);
     }
     return fetched;
   }
 
-  public int address_abs = 0x0000;  // Absolute address
-  public int address_rel = 0x00;  // Relative address
-  public int opcode = 0x00; // Current opcode
-  public int cycles = 0;  // Remaining cycles for the current instruction
+  private int address_abs = 0x0000;  // Absolute address
+  private int address_rel = 0x00;  // Relative address
+  private int opcode = 0x00; // Current opcode
+  private int cycles = 0;  // Remaining cycles for the current instruction
 
   /**
    * A CPU instruction. Each instruction has a name, an opcode, an address mode, and a number of
@@ -1171,8 +1228,13 @@ public class CPU {
    * entries in the table do not contain an instruction and are null. The lookup table is
    * initialized in the CPU constructor.
    */
-  public Instruction[] lookup = new Instruction[256];
+  private final Instruction[] lookup = new Instruction[256];
 
+  /**
+   * Initialize the lookup table for the CPU instructions.
+   *
+   * TODO : Some illegal opcodes are missing. Add them later.
+   */
   private void initializeInstructions() {
     lookup[0x00] = new Instruction("BRK", this::BRK, this::IMM, 7, "IMM");
     lookup[0x01] = new Instruction("ORA", this::ORA, this::IZX, 6, "IZX");
@@ -1385,28 +1447,5 @@ public class CPU {
     lookup[0xFD] = new Instruction("SBC", this::SBC, this::ABX, 4, "ABX");
     lookup[0xFE] = new Instruction("INC", this::INC, this::ABX, 7, "ABX");
     lookup[0xFF] = new Instruction("XXX", this::XXX, this::IMP, 7, "IMP");
-
-
-    /*
-    for (int i = 0; i <= 0xFF; i++) {
-      if (lookup[i] == null) {
-        lookup[i] = new Instruction("XXX", this::XXX, this::IMP, 2);
-      }
-    }
-
-    lookup[3] = new Instruction("XXX", this::XXX, this::IMP, 8);
-    lookup[3] = new Instruction("XXX", this::XXX, this::IMP, 8);
-    lookup[3] = new Instruction("XXX", this::XXX, this::IMP, 8);
-    lookup[3] = new Instruction("XXX", this::XXX, this::IMP, 8);
-    lookup[3] = new Instruction("XXX", this::XXX, this::IMP, 8);
-    lookup[3] = new Instruction("XXX", this::XXX, this::IMP, 8);
-    lookup[3] = new Instruction("XXX", this::XXX, this::IMP, 8);
-    lookup[3] = new Instruction("XXX", this::XXX, this::IMP, 8);
-    lookup[3] = new Instruction("XXX", this::XXX, this::IMP, 8);
-    lookup[3] = new Instruction("XXX", this::XXX, this::IMP, 8);
-
-     */
   }
-
-
 }
