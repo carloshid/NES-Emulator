@@ -1,5 +1,8 @@
 package com.carlosh.nesemulator.mappers;
 
+/**
+ * Mapper 000: NROM.
+ */
 public class Mapper000 implements Mapper {
 
   private int prgBanks;
