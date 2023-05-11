@@ -3,6 +3,7 @@ package com.carlosh.nesemulator;
 import static java.lang.Thread.sleep;
 
 import com.carlosh.nesemulator.ui.ScreenNES;
+import java.util.Arrays;
 import java.util.Random;
 
 public class PPU {
@@ -29,6 +30,14 @@ public class PPU {
   private StatusRegister status = new StatusRegister();
   private LoopyRegister vramAddress = new LoopyRegister();
   private LoopyRegister tramAddress = new LoopyRegister();
+  private Sprite[] oam = new Sprite[64];
+  private Sprite[] secondaryOam = new Sprite[8];
+  private int spritesN = 0;
+
+  public void writeToOam(int address, int data) {
+    Sprite sprite = oam[address/4];
+    sprite.setByte(address % 4, data);
+  }
 
   private int fineX = 0x00;
   private int bgNextTileId = 0x00;
@@ -75,7 +84,7 @@ public class PPU {
   private int whichByte = 0;
   private int buffer = 0;
 
-
+  public int oamAddress = 0x00;
 
   // TODO
   public int cpuRead(int address, boolean readOnly) {
@@ -102,6 +111,8 @@ public class PPU {
         break;
       }
       case 0x0004: {
+        Sprite sprite = oam[oamAddress / 4];
+        data = sprite.getByte(oamAddress);
         // OAM Data
         break;
       }
@@ -156,10 +167,13 @@ public class PPU {
       }
       case 0x0003: {
         // OAM Address
+        oamAddress = data;
         break;
       }
       case 0x0004: {
         // OAM Data
+        Sprite sprite = oam[oamAddress / 4];
+        sprite.setByte(oamAddress, data);
         break;
       }
       case 0x0005: {
@@ -299,7 +313,9 @@ public class PPU {
   }
 
   public void clock() {
-    CPU.log("PPU clock with X: " + currentX + " and Y: " + currentY + "\n");
+    if (CPU.instance.enableLogs)  {
+      CPU.log("PPU clock with X: " + currentX + " and Y: " + currentY + "\n");
+    }
     if (currentY >= -1 && currentY < 240) {
       if (currentY == 0 && currentX == 0) {
         currentX = 1;
@@ -329,6 +345,27 @@ public class PPU {
 
       if (currentY == -1 && currentX >= 280 && currentX < 305) {
         copyY();
+      }
+
+      if (currentX == 257 && currentY >= 0) {
+        Arrays.fill(secondaryOam, new Sprite(0xFF, 0xFF, 0xFF, 0xFF));
+        spritesN = 0;
+
+        for (int i = 0; i < 64; i++) {
+          int distance = currentY - oam[i].getY();
+          if (distance >= 0 && distance < (control.getSpriteSize() == 0 ? 8 : 16)) {
+            if (spritesN == 8) {
+              status.setSpriteOverflow(true);
+              break;
+            }
+            secondaryOam[spritesN] = oam[i];
+            spritesN++;
+          }
+        }
+      }
+
+      if (currentX == 340) {
+
       }
     }
 
@@ -686,6 +723,57 @@ public class PPU {
 
     public void setFineY(int val) {
       value = (value & 0x8FFF) | ((val & 0x0007) << 12);
+    }
+  }
+
+  // Inner class for the sprites
+  private class Sprite {
+    private int x;
+    private int y;
+    private int tileIndex;
+    private int attributes;
+
+    public Sprite(int x, int y, int tileIndex, int attributes) {
+      this.x = x;
+      this.y = y;
+      this.tileIndex = tileIndex;
+      this.attributes = attributes;
+    }
+
+    public int getX() {
+      return x;
+    }
+
+    public int getY() {
+      return y;
+    }
+
+    public int getTileIndex() {
+      return tileIndex;
+    }
+
+    public int getAttributes() {
+      return attributes;
+    }
+
+    public int getByte(int address) {
+      return switch (address % 4) {
+        case 0 -> y;
+        case 1 -> tileIndex;
+        case 2 -> attributes;
+        case 3 -> x;
+        default -> throw new IllegalStateException("Unexpected value: " + address % 4);
+      };
+    }
+
+    public void setByte(int address, int data) {
+      switch (address % 4) {
+        case 0 -> y = data;
+        case 1 -> tileIndex = data;
+        case 2 -> attributes = data;
+        case 3 -> x = data;
+        default -> throw new IllegalStateException("Unexpected value: " + address % 4);
+      };
     }
   }
 

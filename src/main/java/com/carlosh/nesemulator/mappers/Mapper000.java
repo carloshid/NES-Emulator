@@ -14,11 +14,12 @@ public class Mapper000 implements Mapper {
   }
 
   @Override
-  public int cpuRead(int address) {
+  public int[] cpuRead(int address) {
     if (address >= 0x8000 && address <= 0xFFFF) {
-      return address & (prgBanks > 1 ? 0x7FFF : 0x3FFF);
+      int mappedAddress = address & (prgBanks > 1 ? 0x7FFF : 0x3FFF);
+      return new int[] { mappedAddress, 0 };
     }
-    return -2;
+    return new int[] {-2, 0};
   }
 
   @Override
