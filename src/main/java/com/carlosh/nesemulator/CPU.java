@@ -1055,6 +1055,7 @@ public class CPU {
       pc++;
       cycles = lookup[opcode].cycles;
 
+      System.out.println(lookup[opcode].name);
       if (enableLogs) {
         log("P1: " + opcode + " " + lookup[opcode].name + "\tA: " + a + "\tX: " + x_reg + "\tY: " + y_reg
             + "\tstkP: " + stkPtr + "\tPC: " + pc + "\tAbs: " + address_abs + "\tRel: "

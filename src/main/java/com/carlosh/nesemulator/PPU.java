@@ -44,6 +44,7 @@ public class PPU {
   private int[] spriteBitsHigh = new int[8];
   private int[] spriteBitsLow = new int[8];
   private boolean spriteZeroFlag = false;
+  private boolean renderingSpriteZero = false;
 
   public void writeToOam(int address, int data) {
     Sprite sprite = oam[address/4];
@@ -469,10 +470,21 @@ public class PPU {
     int spritePixel = 0;
     int spritePal = 0;
     int spritePriority = 0;
-    boolean renderingSpriteZero = false;
 
     if (mask.getShowSprites() == 1) {
-      // TODO : Render sprites
+      renderingSpriteZero = false;
+      for (int i = 0; i < spritesN; i++) {
+        if (secondaryOam[i].getX() == 0) {
+          spritePixel = (((spriteBitsHigh[i] & 0x80) > 0 ? 1 : 0) << 1) | ((spriteBitsLow[i] & 0x80) > 0 ? 1 : 0);
+          spritePal = ((secondaryOam[i].attributes & 0x03) + 4);
+          spritePriority = (secondaryOam[i].attributes & 0x20) == 0 ? 1 : 0;
+
+          if (spritePixel != 0) {
+            renderingSpriteZero = (i == 0);
+            break;
+          }
+        }
+      }
     }
 
     int finalPixel = 0;
@@ -489,7 +501,11 @@ public class PPU {
 
       // Sprite 0
       if (spriteZeroFlag && renderingSpriteZero && mask.getShowBackground() == 1 && mask.getShowSprites() == 1) {
-        // TODO
+        if (mask.getShowLeftBackground() == 0 && mask.getShowLeftSprites() == 0) {
+          status.setSpriteZeroHit(currentX >= 9 && currentX < 258);
+        } else {
+          status.setSpriteZeroHit(currentX >= 1 && currentX < 258);
+        }
       }
 
     } else if (bgPixel > 0) {
