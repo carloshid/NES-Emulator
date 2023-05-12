@@ -3,6 +3,7 @@ package com.carlosh.nesemulator;
 import static java.lang.Thread.sleep;
 
 import com.carlosh.nesemulator.ui.ScreenNES;
+import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Random;
 
@@ -14,6 +15,13 @@ public class PPU {
   public static final PPU instance = new PPU();
 
   private PPU() {
+    // Initialize OAM
+    for (int i = 0; i < 64; i++) {
+      oam[i] = new Sprite(0xFF, 0xFF, 0xFF, 0xFF);
+    }
+    for (int i = 0; i < 8; i++) {
+      secondaryOam[i] = new Sprite(0xFF, 0xFF, 0xFF, 0xFF);
+    }
   }
 
   private ROM rom;
@@ -33,6 +41,9 @@ public class PPU {
   private Sprite[] oam = new Sprite[64];
   private Sprite[] secondaryOam = new Sprite[8];
   private int spritesN = 0;
+  private int[] spriteBitsHigh = new int[8];
+  private int[] spriteBitsLow = new int[8];
+  private boolean spriteZeroFlag = false;
 
   public void writeToOam(int address, int data) {
     Sprite sprite = oam[address/4];
@@ -86,9 +97,10 @@ public class PPU {
 
   public int oamAddress = 0x00;
 
-  // TODO
   public int cpuRead(int address, boolean readOnly) {
-    CPU.log("CPU read: " + address + "\n");
+    if (CPU.instance.enableLogs) {
+      CPU.log("CPU read: " + address + "\n");
+    }
     int data = 0;
     switch (address) {
       case 0x0000: {
@@ -111,9 +123,9 @@ public class PPU {
         break;
       }
       case 0x0004: {
+        // OAM Data
         Sprite sprite = oam[oamAddress / 4];
         data = sprite.getByte(oamAddress);
-        // OAM Data
         break;
       }
       case 0x0005: {
@@ -140,13 +152,13 @@ public class PPU {
       }
     }
 
-    //assert data != -2;
     return data;
   }
 
-  // TODO
   public void cpuWrite(int address, int data) {
-    CPU.log("CPU write: " + address + " " + data + "\n");
+    if (CPU.instance.enableLogs) {
+      CPU.log("CPU write: " + address + " " + data + "\n");
+    }
     switch (address) {
       case 0x0000: {
         // Control
@@ -156,7 +168,6 @@ public class PPU {
         break;
       }
       case 0x0001: {
-        //System.out.println("Writing to mask");
         // Mask
         mask.write(data);
         break;
@@ -191,7 +202,6 @@ public class PPU {
       }
       case 0x0006: {
         // PPU Address
-        //tramAddress.value &= 0xFF00;
         if (whichByte == 0) {
           tramAddress.value = ((data & 0x3F) << 8) | (tramAddress.value & 0x00FF);
           whichByte = 1;
@@ -215,9 +225,10 @@ public class PPU {
     }
   }
 
-  // TODO
   public int ppuRead(int address, boolean readOnly) {
-    CPU.log("PPU read: " + address + "\n");
+    if (CPU.instance.enableLogs) {
+      CPU.log("PPU read: " + address + "\n");
+    }
     address &= 0x3FFF;
     int romData = rom.ppuRead(address);
     if (romData != -2) {
@@ -259,9 +270,10 @@ public class PPU {
     return 0x00;
   }
 
-  // TODO
   public void ppuWrite(int address, int data) {
-    CPU.log("PPU write: " + address + " " + data + "\n");
+    if (CPU.instance.enableLogs) {
+      CPU.log("PPU write: " + address + " " + data + "\n");
+    }
     address &= 0x3FFF;
     if (rom.ppuWrite(address, data)) {
       return;
@@ -322,11 +334,17 @@ public class PPU {
       }
 
       if (currentY == -1 && currentX == 1) {
+        // Update status register
         status.setVerticalBlank(false);
+        status.setSpriteOverflow(false);
+        status.setSpriteZeroHit(false);
+        Arrays.fill(spriteBitsHigh, 0);
+        Arrays.fill(spriteBitsLow, 0);
       }
 
       if ((currentX >= 2 && currentX < 258) || (currentX >= 321 && currentX < 338)) {
         updateBackgroundShifters();
+        updateSpriteShifters();
         prepareBackground((currentX - 1) % 8);
       }
 
@@ -348,9 +366,13 @@ public class PPU {
       }
 
       if (currentX == 257 && currentY >= 0) {
+        // Reset sprite memory
         Arrays.fill(secondaryOam, new Sprite(0xFF, 0xFF, 0xFF, 0xFF));
         spritesN = 0;
+        Arrays.fill(spriteBitsHigh, 0);
+        Arrays.fill(spriteBitsLow, 0);
 
+        spriteZeroFlag = false;
         for (int i = 0; i < 64; i++) {
           int distance = currentY - oam[i].getY();
           if (distance >= 0 && distance < (control.getSpriteSize() == 0 ? 8 : 16)) {
@@ -358,14 +380,20 @@ public class PPU {
               status.setSpriteOverflow(true);
               break;
             }
+            if (spritesN == 0) {
+              spriteZeroFlag = true;
+            }
             secondaryOam[spritesN] = oam[i];
             spritesN++;
           }
         }
       }
 
+      // TODO : Sprite evaluation
       if (currentX == 340) {
+        for (int i = 0; i < spritesN; i++) {
 
+        }
       }
     }
 
@@ -395,6 +423,8 @@ public class PPU {
     if (color != 0x545454) {
       //System.out.println(color);
     }
+
+    // TODO : Render sprites
 
     drawPixel(currentX - 1, currentY, color);
 
@@ -834,6 +864,19 @@ public class PPU {
       bgShifterPatternHi <<= 1;
       bgShifterAttribLo <<= 1;
       bgShifterAttribHi <<= 1;
+    }
+  }
+
+  private void updateSpriteShifters() {
+    if (mask.getShowSprites() != 0 && currentX >= 1 && currentX < 258) {
+      for (int i = 0; i < spritesN; i++) {
+        if (secondaryOam[i].getX() > 0) {
+          secondaryOam[i].x--;
+        } else {
+          spriteBitsHigh[i] <<= 1;
+          spriteBitsLow[i] <<= 1;
+        }
+      }
     }
   }
 
