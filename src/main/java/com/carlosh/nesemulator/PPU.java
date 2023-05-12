@@ -22,6 +22,8 @@ public class PPU {
     for (int i = 0; i < 8; i++) {
       secondaryOam[i] = new Sprite(0xFF, 0xFF, 0xFF, 0xFF);
     }
+    Arrays.fill(spriteBitsHigh, 0);
+    Arrays.fill(spriteBitsLow, 0);
   }
 
   private ROM rom;
@@ -48,7 +50,7 @@ public class PPU {
 
   public void writeToOam(int address, int data) {
     Sprite sprite = oam[address/4];
-    sprite.setByte(address % 4, data);
+    sprite.setByte(address, data);
   }
 
   private int fineX = 0x00;
@@ -368,7 +370,9 @@ public class PPU {
 
       if (currentX == 257 && currentY >= 0) {
         // Reset sprite memory
-        Arrays.fill(secondaryOam, new Sprite(0xFF, 0xFF, 0xFF, 0xFF));
+        for (int i = 0; i < 8; i++) {
+          secondaryOam[i] = new Sprite(0xFF, 0xFF, 0xFF, 0xFF);
+        }
         spritesN = 0;
         Arrays.fill(spriteBitsHigh, 0);
         Arrays.fill(spriteBitsLow, 0);
@@ -381,10 +385,10 @@ public class PPU {
               status.setSpriteOverflow(true);
               break;
             }
-            if (spritesN == 0) {
+            if (i == 0) {
               spriteZeroFlag = true;
             }
-            secondaryOam[spritesN] = oam[i];
+            secondaryOam[spritesN] = new Sprite(oam[i]);
             spritesN++;
           }
         }
@@ -455,7 +459,6 @@ public class PPU {
     int bgPixel = 0;
     int bgPal = 0;
     if (mask.getShowBackground() == 1) {
-      //System.out.println("getting color");
       int bitMux = 0x8000 >> fineX;
       int p0Pixel = (bgShifterPatternLo & bitMux) > 0 ? 1 : 0;
       int p1Pixel = (bgShifterPatternHi & bitMux) > 0 ? 1 : 0;
@@ -463,7 +466,6 @@ public class PPU {
       int bgPal0 = (bgShifterAttribLo & bitMux) > 0 ? 1 : 0;
       int bgPal1 = (bgShifterAttribHi & bitMux) > 0 ? 1 : 0;
       bgPal = (bgPal1 << 1) | bgPal0;
-      //System.out.println(p0Pixel + " " + p1Pixel + " " + bgPal0 + " " + bgPal1);
     }
 
     // Render sprites
@@ -480,7 +482,9 @@ public class PPU {
           spritePriority = (secondaryOam[i].attributes & 0x20) == 0 ? 1 : 0;
 
           if (spritePixel != 0) {
-            renderingSpriteZero = (i == 0);
+            if (i == 0) {
+              renderingSpriteZero = true;
+            }
             break;
           }
         }
@@ -502,9 +506,13 @@ public class PPU {
       // Sprite 0
       if (spriteZeroFlag && renderingSpriteZero && mask.getShowBackground() == 1 && mask.getShowSprites() == 1) {
         if (mask.getShowLeftBackground() == 0 && mask.getShowLeftSprites() == 0) {
-          status.setSpriteZeroHit(currentX >= 9 && currentX < 258);
+          if (currentX >= 9 && currentX < 258) {
+            status.setSpriteZeroHit(true);
+          }
         } else {
-          status.setSpriteZeroHit(currentX >= 1 && currentX < 258);
+          if (currentX >= 1 && currentX < 258) {
+            status.setSpriteZeroHit(true);
+          }
         }
       }
 
@@ -860,6 +868,13 @@ public class PPU {
       this.y = y;
       this.tileIndex = tileIndex;
       this.attributes = attributes;
+    }
+
+    public Sprite(Sprite sp) {
+      this.x = sp.getX();
+      this.y = sp.getY();
+      this.tileIndex = sp.getTileIndex();
+      this.attributes = sp.getAttributes();
     }
 
     public int getX() {

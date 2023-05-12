@@ -1055,7 +1055,6 @@ public class CPU {
       pc++;
       cycles = lookup[opcode].cycles;
 
-      System.out.println(lookup[opcode].name);
       if (enableLogs) {
         log("P1: " + opcode + " " + lookup[opcode].name + "\tA: " + a + "\tX: " + x_reg + "\tY: " + y_reg
             + "\tstkP: " + stkPtr + "\tPC: " + pc + "\tAbs: " + address_abs + "\tRel: "
@@ -1162,7 +1161,9 @@ public class CPU {
    * Non-maskable interrupt request received. Execute regardless of the 'ignore interrupts' bit.
    */
   public void nonMaskableInterruptRequest() {
-    CPU.log("NMI before: PC: : " + pc + "stkPtr: " + stkPtr + " Abs: " + address_abs + "\n");
+    if (enableLogs) {
+      CPU.log("NMI before: PC: : " + pc + "stkPtr: " + stkPtr + " Abs: " + address_abs + "\n");
+    }
     write((0x0100 + stkPtr--), (pc >> 8) & 0x00FF);
     write((0x0100 + stkPtr--), pc & 0x00FF);
     setStatusFlag(StatusFlag.B, 0);

@@ -84,6 +84,10 @@ public class Bus {
   public void reset() {
     cpu.reset();
     ppu.reset();
+    directAddress = 0;
+    directAddressData = 0;
+    dma = false;
+    dmaWaiting = true;
     clockCounter = 0;
   }
 
@@ -107,10 +111,13 @@ public class Bus {
         if (clockCounter % 2 == 1) {
           ppu.writeToOam(directAddress & 0xFF, directAddressData);
           if ((directAddress & 0xFF) == 0xFF) {
-            dma = false;
-            dmaWaiting = true;
+            directAddress = directAddress & 0xFF00;
           } else {
             directAddress++;
+          }
+          if ((directAddress & 0xFF) == 0) {
+            dma = false;
+            dmaWaiting = true;
           }
         } else {
           directAddressData = read(directAddress, false);
