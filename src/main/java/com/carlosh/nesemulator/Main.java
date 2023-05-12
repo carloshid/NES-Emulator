@@ -15,8 +15,6 @@ public class Main extends Application {
 
     //CPU cpu = CPU.instance;
 
-    //System.out.println(str);
-
     launch(args);
 
     /*

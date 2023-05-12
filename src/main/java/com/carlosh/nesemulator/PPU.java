@@ -389,9 +389,55 @@ public class PPU {
         }
       }
 
-      // TODO : Sprite evaluation
       if (currentX == 340) {
         for (int i = 0; i < spritesN; i++) {
+          int addressLow = -1;
+
+          // Get the low byte of the sprite pattern address
+          if (control.getSpriteSize() == 0) {
+            // 8x8 sprites
+            addressLow = (control.getPatternSprite() << 12) | (secondaryOam[i].tileIndex << 4);
+            if ((secondaryOam[i].attributes & 0x80) != 0) {
+              // Vertical flip
+              addressLow |= 0x07 - (currentY - secondaryOam[i].getY());
+            } else {
+              // No vertical flip
+              addressLow |= currentY - secondaryOam[i].getY();
+            }
+
+          } else {
+            // 8x16 sprites
+            addressLow = ((secondaryOam[i].tileIndex & 0x01) << 12);
+            if (currentY - secondaryOam[i].getY() < 8) {
+              // Top 8x8 half of the sprite
+              addressLow |= ((secondaryOam[i].tileIndex & 0xFE) << 4);
+            } else {
+              // Bottom 8x8 half of the sprite
+              addressLow |= (((secondaryOam[i].tileIndex | 0xFE) + 1) << 4);
+            }
+
+            if ((secondaryOam[i].attributes & 0x80) != 0) {
+              // Vertical flip
+              addressLow |= 0x07 - (currentY - secondaryOam[i].getY() & 0x07);
+            } else {
+              // No vertical flip
+              addressLow |= currentY - secondaryOam[i].getY() & 0x07;
+            }
+          }
+
+          assert addressLow != -1;
+          // Get the low and high bytes of the sprite pattern
+          int spritePatternLow = ppuRead(addressLow, false);
+          int spritePatternHigh = ppuRead(addressLow + 8, false);
+
+          if ((secondaryOam[i].attributes & 0x40) != 0) {
+            // Horizontal flip
+            spritePatternLow = reverse(spritePatternLow);
+            spritePatternHigh = reverse(spritePatternHigh);
+          }
+
+          spriteBitsLow[i] = spritePatternLow;
+          spriteBitsHigh[i] = spritePatternHigh;
 
         }
       }
@@ -405,9 +451,8 @@ public class PPU {
     }
 
     // Render background
-    int bgPixel = 0x00;
-    int bgPal = 0x00;
-    int color = 0x000000;
+    int bgPixel = 0;
+    int bgPal = 0;
     if (mask.getShowBackground() == 1) {
       //System.out.println("getting color");
       int bitMux = 0x8000 >> fineX;
@@ -419,12 +464,43 @@ public class PPU {
       bgPal = (bgPal1 << 1) | bgPal0;
       //System.out.println(p0Pixel + " " + p1Pixel + " " + bgPal0 + " " + bgPal1);
     }
-    color = getPaletteColor(bgPal, bgPixel);
-    if (color != 0x545454) {
-      //System.out.println(color);
+
+    // Render sprites
+    int spritePixel = 0;
+    int spritePal = 0;
+    int spritePriority = 0;
+    boolean renderingSpriteZero = false;
+
+    if (mask.getShowSprites() == 1) {
+      // TODO : Render sprites
     }
 
-    // TODO : Render sprites
+    int finalPixel = 0;
+    int finalPal = 0;
+
+    if (bgPixel > 0 && spritePixel > 0) {
+      if (spritePriority != 0) {
+        finalPixel = spritePixel;
+        finalPal = spritePal;
+      } else {
+        finalPixel = bgPixel;
+        finalPal = bgPal;
+      }
+
+      // Sprite 0
+      if (spriteZeroFlag && renderingSpriteZero && mask.getShowBackground() == 1 && mask.getShowSprites() == 1) {
+        // TODO
+      }
+
+    } else if (bgPixel > 0) {
+      finalPixel = bgPixel;
+      finalPal = bgPal;
+    } else if (spritePixel > 0) {
+      finalPixel = spritePixel;
+      finalPal = spritePal;
+    }
+
+    int color = getPaletteColor(finalPal, finalPixel);
 
     drawPixel(currentX - 1, currentY, color);
 
@@ -927,6 +1003,12 @@ public class PPU {
     control.value = 0;
     tramAddress.value = 0;
     vramAddress.value = 0;
+  }
+
+  private int reverse(int number) {
+    assert number < 256;
+    int reversed = Integer.reverse(number);
+    return reversed >>> 24;
   }
 
 
