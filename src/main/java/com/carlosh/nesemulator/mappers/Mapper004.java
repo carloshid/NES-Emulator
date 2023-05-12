@@ -6,8 +6,8 @@ package com.carlosh.nesemulator.mappers;
 public class Mapper004 implements Mapper {
 
   @Override
-  public int cpuRead(int address) {
-    return 0;
+  public int[] cpuRead(int address) {
+    return new int[0];
   }
 
   @Override

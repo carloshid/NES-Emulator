@@ -13,6 +13,10 @@ public class Bus {
   public int[] controller = new int[2];
   private int[] controllerState = new int[2];
   int[] ram = new int[2048];
+  private int directAddress = 0;
+  private int directAddressData = 0;
+  boolean dma = false;
+  boolean dmaWaiting = true;
 
   public void write (int address, int data) {
     if (rom.cpuWrite(address, data)) {
@@ -24,6 +28,9 @@ public class Bus {
       //System.out.println("Writing");
       //System.out.println("Writing ppu.cpuWrite: " + (address & 0x0007) + " " + data);
       ppu.cpuWrite(address & 0x0007, data);
+    } else if (address == 0x4014) {
+      directAddress = data << 8;
+      dma = true;
     } else if (address >= 0x4016 && address <= 0x4017) {
       //System.out.println("BBBB");
       controllerState[address & 0x0001] = controller[address & 0x0001];
@@ -77,18 +84,44 @@ public class Bus {
   public void reset() {
     cpu.reset();
     ppu.reset();
+    directAddress = 0;
+    directAddressData = 0;
+    dma = false;
+    dmaWaiting = true;
     clockCounter = 0;
   }
 
   public void clock() {
-    //bus.controller[0] = KeyController.instance.state;
     ppu.clock();
     if (clockCounter % 3 == 0) {
-      try {
-        cpu.clockCycle();
-        //System.out.println("CPU CYCLE");
-      } catch (Exception e) {
-        throw new RuntimeException(e);
+      // Normal CPU clock
+      if (!dma) {
+        try {
+          cpu.clockCycle();
+        } catch (Exception e) {
+          throw new RuntimeException(e);
+        }
+      }
+      // Waiting for dma
+      else if (dmaWaiting) {
+        dmaWaiting = clockCounter % 2 == 0;
+      }
+      // DMA
+      else {
+        if (clockCounter % 2 == 1) {
+          ppu.writeToOam(directAddress & 0xFF, directAddressData);
+          if ((directAddress & 0xFF) == 0xFF) {
+            directAddress = directAddress & 0xFF00;
+          } else {
+            directAddress++;
+          }
+          if ((directAddress & 0xFF) == 0) {
+            dma = false;
+            dmaWaiting = true;
+          }
+        } else {
+          directAddressData = read(directAddress, false);
+        }
       }
     }
 

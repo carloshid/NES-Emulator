@@ -1161,7 +1161,9 @@ public class CPU {
    * Non-maskable interrupt request received. Execute regardless of the 'ignore interrupts' bit.
    */
   public void nonMaskableInterruptRequest() {
-    CPU.log("NMI before: PC: : " + pc + "stkPtr: " + stkPtr + " Abs: " + address_abs + "\n");
+    if (enableLogs) {
+      CPU.log("NMI before: PC: : " + pc + "stkPtr: " + stkPtr + " Abs: " + address_abs + "\n");
+    }
     write((0x0100 + stkPtr--), (pc >> 8) & 0x00FF);
     write((0x0100 + stkPtr--), pc & 0x00FF);
     setStatusFlag(StatusFlag.B, 0);

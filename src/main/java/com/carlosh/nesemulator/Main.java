@@ -15,8 +15,6 @@ public class Main extends Application {
 
     //CPU cpu = CPU.instance;
 
-    //System.out.println(str);
-
     launch(args);
 
     /*
@@ -47,7 +45,7 @@ public class Main extends Application {
     stage.setScene(scene);
     stage.show();
 
-    ROM rom = new ROM("nestest.nes"); // Change to the filename of the rom file
+    ROM rom = new ROM("rom.nes"); // Change to the filename of the rom file
     Bus bus = new Bus();
     bus.addROM(rom);
     bus.reset();
@@ -59,7 +57,7 @@ public class Main extends Application {
     Thread t = new Thread(new Runnable() {
       @Override
       public void run() {
-        double res = 0;
+        long res = 0;
         long elapsedTime, currentTime, previousElapsedTime;
         long previousTime = System.nanoTime();
 
@@ -71,13 +69,14 @@ public class Main extends Application {
 
           previousElapsedTime = elapsedTime;
 
+          Bus.bus.controller[0] = KeyController.controller0.state;
+          Bus.bus.controller[1] = KeyController.controller1.state;
+
           if (res > 0) {
             res -= elapsedTime;
           } else {
-            res += (1.0/ 60.0) - elapsedTime;
-            //System.out.println(KeyController.instance.state);
-            Bus.bus.controller[0] = KeyController.controller0.state;
-            Bus.bus.controller[1] = KeyController.controller1.state;
+            res += 1000000000 / 60 - elapsedTime;
+
             while (!PPU.instance.ready) {
               bus.clock();
             }

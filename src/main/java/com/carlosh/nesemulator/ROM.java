@@ -102,9 +102,12 @@ public class ROM {
   }
 
   public int cpuRead(int address, boolean readOnly) {
-    int mappedAddress = mapper.cpuRead(address);
-    if (mappedAddress != -2) {
-      return prgROM.get(mappedAddress);
+    int[] mappedResult = mapper.cpuRead(address);
+    //int mappedAddress = mapper.cpuRead(address);
+    if (mappedResult[0] == -1) {
+      return mappedResult[1];
+    } else if (mappedResult[0] != -2) {
+      return prgROM.get(mappedResult[0]);
     }
     return -2;
   }
