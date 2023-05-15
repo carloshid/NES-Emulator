@@ -50,6 +50,8 @@ public class ScreenNES extends Canvas {
     Image fxImage = SwingFXUtils.toFXImage(image, null);
     gc.drawImage(fxImage, 0, 0, NES_WIDTH * SCALE, NES_HEIGHT * SCALE);
 
+    image.flush();
+
   }
 
   public void updateScreen2(int[][] pixels) {
