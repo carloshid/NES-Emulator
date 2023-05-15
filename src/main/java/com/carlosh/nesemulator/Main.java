@@ -36,13 +36,13 @@ public class Main extends Application {
 
   public void startEmulation(Stage stage, String file) throws Exception {
     ScreenNES screen = new ScreenNES();
-    int[][] pixels = new int[ScreenNES.NES_WIDTH][ScreenNES.NES_HEIGHT];
-    for (int x = 0; x < ScreenNES.NES_WIDTH; x++) {
-      for (int y = 0; y < ScreenNES.NES_HEIGHT; y++) {
-        pixels[x][y] = 0xFFFFFF & (x * y);
-      }
-    }
-    screen.updateScreen(pixels);
+//    int[][] pixels = new int[ScreenNES.NES_WIDTH][ScreenNES.NES_HEIGHT];
+//    for (int x = 0; x < ScreenNES.NES_WIDTH; x++) {
+//      for (int y = 0; y < ScreenNES.NES_HEIGHT; y++) {
+//        pixels[x][y] = 0xFFFFFF & (x * y);
+//      }
+//    }
+//    screen.updateScreen(pixels);
 
     StackPane root = new StackPane(screen);
     //root.getChildren().add(screen);
