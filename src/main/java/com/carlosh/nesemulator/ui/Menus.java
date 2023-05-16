@@ -84,7 +84,7 @@ public class Menus {
 
         // Create the settings layout and set it to the scene
         VBox optionsMenu = new VBox(); // TODO : Change this from VBox to OptionsMenu
-        Scene optionsScene = new Scene(optionsMenu, 300, 200);
+        Scene optionsScene = new Scene(optionsMenu, 270, 200);
         optionsStage.setScene(optionsScene);
         optionsStage.showAndWait();
 
@@ -121,8 +121,8 @@ public class Menus {
         hotkeysStage.setTitle("Hotkeys");
 
         // Create the hotkeys layout and set it to the scene
-        VBox hotkeysMenu = new VBox(); // TODO : Change this from VBox to OptionsMenu
-        Scene hotkeysScene = new Scene(hotkeysMenu, 300, 200);
+        HotkeysMenu hotkeysMenu = new HotkeysMenu();
+        Scene hotkeysScene = new Scene(hotkeysMenu, 220, 300);
         hotkeysStage.setScene(hotkeysScene);
         hotkeysStage.showAndWait();
 
