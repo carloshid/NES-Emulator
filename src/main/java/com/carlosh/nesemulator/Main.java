@@ -2,6 +2,7 @@ package com.carlosh.nesemulator;
 
 import static java.lang.Thread.sleep;
 
+import com.carlosh.nesemulator.ui.Menus;
 import com.carlosh.nesemulator.ui.ScreenNES;
 import java.io.File;
 import java.util.concurrent.Callable;
@@ -12,56 +13,38 @@ import javafx.scene.Scene;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 
 public class Main extends Application {
 
+  private static VBox root;
+
   public static void main(String[] args) {
 
-    //CPU cpu = CPU.instance;
-
     launch(args);
-
-    /*
-    ROM rom = new ROM("filename"); // Change to the filename of the rom file
-    Bus bus = new Bus();
-    bus.addROM(rom);
-    bus.reset();
-
-     */
   }
 
-  public void startEmulation(Stage stage, String file) throws Exception {
+  public static void startEmulation(Stage stage, String file) throws Exception {
+    // Start the NES screen and add it to the application's screen
     ScreenNES screen = new ScreenNES();
-//    int[][] pixels = new int[ScreenNES.NES_WIDTH][ScreenNES.NES_HEIGHT];
-//    for (int x = 0; x < ScreenNES.NES_WIDTH; x++) {
-//      for (int y = 0; y < ScreenNES.NES_HEIGHT; y++) {
-//        pixels[x][y] = 0xFFFFFF & (x * y);
-//      }
-//    }
-//    screen.updateScreen(pixels);
+    StackPane sp = new StackPane(screen);
+    root.getChildren().add(sp);
+    // Adjust the size of the stage to match the NES screen
+    stage.setWidth(screen.getWidth());
+    stage.setHeight(screen.getHeight() + 64);
 
-    StackPane root = new StackPane(screen);
-    //root.getChildren().add(screen);
-
-    Scene scene = new Scene(root);
-    stage.setTitle("NES Emulator");
-
-    stage.setScene(scene);
-    stage.show();
-
-    ROM rom = new ROM(file); // Change to the filename of the rom file
+    // Start the NES emulation
+    ROM rom = new ROM(file);  // TODO: Add error handling
     Bus bus = new Bus();
     bus.addROM(rom);
     bus.reset();
-    //PPU ppu = new
-    // PPU();
-    //ppu.addROM(rom);
 
-
+    // Start the emulation loop in a separate thread
     Thread t = new Thread(new Runnable() {
       @Override
       public void run() {
@@ -94,57 +77,23 @@ public class Main extends Application {
 
           ScreenNES.getInstance().updateScreen(PPU.instance.pixels);
 
-
-
         }
       }
     });
 
     t.start();
 
-
   }
 
   public void start(Stage stage) {
-    // Create a MenuBar with a File menu
-    MenuBar menuBar = new MenuBar();
-    Menu fileMenu = new Menu("File");
-    MenuItem openMenuItem = new MenuItem("Open File");
-
-    // Event handler to load rom file
-    openMenuItem.setOnAction(new EventHandler<ActionEvent>() {
-      public void handle(ActionEvent event) {
-        // Show a file chooser dialog
-        FileChooser fileChooser = new FileChooser();
-        File selectedFile = fileChooser.showOpenDialog(stage);
-        if (selectedFile != null) {
-          System.out.println("Selected file: " + selectedFile.getAbsolutePath());
-
-          try {
-            startEmulation(stage, selectedFile.getAbsolutePath());
-          } catch (Exception e) {
-            throw new RuntimeException(e);
-          }
-        }
-      }
-    });
-    fileMenu.getItems().add(openMenuItem);
-
-    menuBar.getMenus().add(fileMenu);
-
-    // Create a VBox and add the MenuBar to it
+    // Create the menu bar and start the application ui
+    MenuBar menuBar = Menus.menuBar(stage);
     VBox vbox = new VBox(menuBar);
+    root = vbox;
 
-    // Create a Scene and set the VBox as its root
-    Scene scene = new Scene(vbox, 400, 300);
-
-    // Set the Scene to the Stage
+    Scene scene = new Scene(vbox, ScreenNES.NES_WIDTH * ScreenNES.SCALE, ScreenNES.NES_HEIGHT * ScreenNES.SCALE + 64);
     stage.setScene(scene);
-
-    // Set the title of the Stage
-    stage.setTitle("File Menu Example");
-
-    // Show the Stage
+    stage.setTitle("NES Emulator");
     stage.show();
   }
 }
