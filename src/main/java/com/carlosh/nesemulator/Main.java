@@ -2,6 +2,7 @@ package com.carlosh.nesemulator;
 
 import static java.lang.Thread.sleep;
 
+import com.carlosh.nesemulator.ui.ConfigOptions;
 import com.carlosh.nesemulator.ui.Menus;
 import com.carlosh.nesemulator.ui.ScreenNES;
 import java.io.File;
@@ -31,7 +32,7 @@ public class Main extends Application {
 
 
   public static void main(String[] args) {
-
+    ConfigOptions.loadConfigOptions();
     launch(args);
   }
 

@@ -37,14 +37,14 @@ public class HotkeysMenu extends Pane {
       this.setWidth(80);
 
       controllerLabel = new Label(controllerStr);
-      aKeybindField = new KeybindField(KeyCode.A, 0, controllerID);
-      bKeybindField = new KeybindField(KeyCode.B, 1, controllerID);
-      upKeybindField = new KeybindField(KeyCode.UP, 4, controllerID);
-      downKeybindField = new KeybindField(KeyCode.DOWN, 5, controllerID);
-      leftKeybindField = new KeybindField(KeyCode.LEFT, 6, controllerID);
-      rightKeybindField = new KeybindField(KeyCode.RIGHT, 7, controllerID);
-      selectKeybindField = new KeybindField(KeyCode.S, 2, controllerID);
-      startKeybindField = new KeybindField(KeyCode.D, 3, controllerID);
+      aKeybindField = new KeybindField(ConfigOptions.getKeyCode(controllerID, 0), 0, controllerID);
+      bKeybindField = new KeybindField(ConfigOptions.getKeyCode(controllerID, 1), 1, controllerID);
+      selectKeybindField = new KeybindField(ConfigOptions.getKeyCode(controllerID, 2), 2, controllerID);
+      startKeybindField = new KeybindField(ConfigOptions.getKeyCode(controllerID, 3), 3, controllerID);
+      upKeybindField = new KeybindField(ConfigOptions.getKeyCode(controllerID, 4), 4, controllerID);
+      downKeybindField = new KeybindField(ConfigOptions.getKeyCode(controllerID, 5), 5, controllerID);
+      leftKeybindField = new KeybindField(ConfigOptions.getKeyCode(controllerID, 6), 6, controllerID);
+      rightKeybindField = new KeybindField(ConfigOptions.getKeyCode(controllerID, 7), 7, controllerID);
 
       this.getChildren().addAll(controllerLabel, aKeybindField, bKeybindField, upKeybindField,
           downKeybindField, leftKeybindField, rightKeybindField, selectKeybindField, startKeybindField);

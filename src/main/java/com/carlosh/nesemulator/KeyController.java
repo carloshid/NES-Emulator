@@ -99,4 +99,15 @@ public class KeyController {
       state &= ~0x01;
     }
   }
+
+  public void setKeyCodes(KeyCode[] keyCodes) {
+    a = keyCodes[0];
+    b = keyCodes[1];
+    select = keyCodes[2];
+    start = keyCodes[3];
+    up = keyCodes[4];
+    down = keyCodes[5];
+    left = keyCodes[6];
+    right = keyCodes[7];
+  }
 }
