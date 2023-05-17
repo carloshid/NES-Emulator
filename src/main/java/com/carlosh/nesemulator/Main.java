@@ -9,6 +9,7 @@ import java.util.concurrent.Callable;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
@@ -23,6 +24,9 @@ import javafx.stage.Stage;
 public class Main extends Application {
 
   private static VBox root;
+  private static boolean emulationRunning = false;
+  private static Thread emulationThread;
+
 
   public static void main(String[] args) {
 
@@ -30,9 +34,24 @@ public class Main extends Application {
   }
 
   public static void startEmulation(Stage stage, String file) throws Exception {
+    if (emulationRunning) {
+      emulationThread.interrupt();
+
+      while (emulationRunning) {
+        sleep(100);
+      }
+    }
+
+    emulationRunning = true;
     // Start the NES screen and add it to the application's screen
     ScreenNES screen = new ScreenNES();
     StackPane sp = new StackPane(screen);
+    for (Node child : root.getChildren()) {
+      if (child instanceof StackPane) {
+        root.getChildren().remove(child);
+        break;
+      }
+    }
     root.getChildren().add(sp);
     // Adjust the size of the stage to match the NES screen
     stage.setWidth(screen.getWidth());
@@ -45,14 +64,14 @@ public class Main extends Application {
     bus.reset();
 
     // Start the emulation loop in a separate thread
-    Thread t = new Thread(new Runnable() {
+    emulationThread = new Thread(new Runnable() {
       @Override
       public void run() {
         long res = 0;
         long elapsedTime, currentTime, previousElapsedTime;
         long previousTime = System.nanoTime();
 
-        while (true) {
+        while (!Thread.currentThread().isInterrupted()) {
 
           currentTime = System.nanoTime();
           elapsedTime = currentTime - previousTime;
@@ -78,10 +97,14 @@ public class Main extends Application {
           ScreenNES.getInstance().updateScreen(PPU.instance.pixels);
 
         }
+
+        CPU.instance.reset();
+        PPU.instance.reset();
+        emulationRunning = false;
       }
     });
 
-    t.start();
+    emulationThread.start();
 
   }
 
