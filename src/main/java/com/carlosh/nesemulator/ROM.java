@@ -4,6 +4,7 @@ import com.carlosh.nesemulator.mappers.Mapper;
 import com.carlosh.nesemulator.mappers.Mapper000;
 import java.io.File;
 import java.io.FileInputStream;
+import java.nio.file.NoSuchFileException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,7 +46,6 @@ public class ROM {
   public ROM(String filename) {
     this.header = new ROM_Header();
     valid = false;
-
 
     romBytes = readFile(filename);
 

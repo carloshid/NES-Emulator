@@ -5,6 +5,7 @@ import static java.lang.Thread.sleep;
 import com.carlosh.nesemulator.ui.Menus;
 import com.carlosh.nesemulator.ui.ScreenNES;
 import java.io.File;
+import java.nio.file.NoSuchFileException;
 import java.util.concurrent.Callable;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
@@ -26,6 +27,7 @@ public class Main extends Application {
   private static VBox root;
   private static boolean emulationRunning = false;
   private static Thread emulationThread;
+  private static ROM rom;
 
 
   public static void main(String[] args) {
@@ -33,12 +35,24 @@ public class Main extends Application {
     launch(args);
   }
 
-  public static void startEmulation(Stage stage, String file) throws Exception {
+  public static void startEmulation(Stage stage, String file) {
+    // Try to load the ROM file
+    try {
+      rom = new ROM(file);
+    } catch (Exception e) {
+      System.out.println("File does not exist or is not readable");
+      return;
+    }
+
     if (emulationRunning) {
       emulationThread.interrupt();
 
       while (emulationRunning) {
-        sleep(100);
+        try {
+          sleep(100);
+        } catch (InterruptedException e) {
+          throw new RuntimeException(e);
+        }
       }
     }
 
@@ -58,7 +72,6 @@ public class Main extends Application {
     stage.setHeight(screen.getHeight() + 64);
 
     // Start the NES emulation
-    ROM rom = new ROM(file);  // TODO: Add error handling
     Bus bus = new Bus();
     bus.addROM(rom);
     bus.reset();
