@@ -11,7 +11,7 @@ public class Mapper005 implements Mapper {
   }
 
   @Override
-  public int cpuWrite(int address) {
+  public int cpuWrite(int address, int data) {
     return 0;
   }
 
@@ -23,5 +23,10 @@ public class Mapper005 implements Mapper {
   @Override
   public int ppuWrite(int address) {
     return 0;
+  }
+
+  @Override
+  public MirroringMode getMirroringMode() {
+    return null;
   }
 }

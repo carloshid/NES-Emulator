@@ -23,7 +23,7 @@ public class Mapper000 implements Mapper {
   }
 
   @Override
-  public int cpuWrite(int address) {
+  public int cpuWrite(int address, int data) {
     if (address >= 0x8000 && address <= 0xFFFF) {
       return address & (prgBanks > 1 ? 0x7FFF : 0x3FFF);
     }
@@ -41,5 +41,10 @@ public class Mapper000 implements Mapper {
   @Override
   public int ppuWrite(int address) {
     return -2;
+  }
+
+  @Override
+  public MirroringMode getMirroringMode() {
+    return MirroringMode.HARDWARE;
   }
 }

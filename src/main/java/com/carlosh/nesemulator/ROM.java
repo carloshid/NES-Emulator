@@ -2,6 +2,7 @@ package com.carlosh.nesemulator;
 
 import com.carlosh.nesemulator.mappers.Mapper;
 import com.carlosh.nesemulator.mappers.Mapper000;
+import com.carlosh.nesemulator.mappers.MirroringMode;
 import java.io.File;
 import java.io.FileInputStream;
 import java.nio.file.NoSuchFileException;
@@ -22,7 +23,7 @@ public class ROM {
   private int chrBanks = 0;
 
   private boolean valid = false;
-  private Mirror mirror = Mirror.HORIZONTAL;
+  private MirroringMode mirror = MirroringMode.HORIZONTAL;
 
   private class ROM_Header {
     String name;
@@ -34,13 +35,6 @@ public class ROM {
     int tvSystem1;
     int tvSystem2;
     String unused;
-  }
-
-  public enum Mirror {
-    HORIZONTAL,
-    VERTICAL,
-    ONESCREEN_LO,
-    ONESCREEN_HI
   }
 
   public ROM(String filename) {
@@ -61,7 +55,7 @@ public class ROM {
 
     // Mapper id and mirror
     mapperID = ((header.mapper2 >> 4) << 4) | (header.mapper1 >> 4);
-    mirror = (header.mapper1 & 0x01) != 0 ? Mirror.VERTICAL : Mirror.HORIZONTAL;
+    mirror = (header.mapper1 & 0x01) != 0 ? MirroringMode.VERTICAL : MirroringMode.HORIZONTAL;
 
     // File type
     int fileType = (header.mapper2 & 0x0C) == 0x08 ? 2 : 1;
@@ -113,7 +107,7 @@ public class ROM {
   }
 
   public boolean cpuWrite(int address, int data) {
-    int mappedAddress = mapper.cpuWrite(address);
+    int mappedAddress = mapper.cpuWrite(address, data);
     if (mappedAddress != -2) {
       prgROM.set(mappedAddress, data);
       return true;
@@ -181,8 +175,10 @@ public class ROM {
     return newHeader;
   }
 
-  public Mirror getMirror() {
-    return mirror;
+  public MirroringMode getMirror() {
+    MirroringMode mode = mapper.getMirroringMode();
+    if (mode == MirroringMode.HARDWARE) return mirror;
+    else return mode;
   }
 
 
