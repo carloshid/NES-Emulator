@@ -55,6 +55,7 @@ public class Menus {
       public void handle(ActionEvent event) {
         // Show a file chooser dialog
         FileChooser fileChooser = new FileChooser();
+        fileChooser.setInitialDirectory(new File(System.getProperty("user.dir")));
         File selectedFile = fileChooser.showOpenDialog(stage);
         if (selectedFile != null) {
           try {

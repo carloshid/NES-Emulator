@@ -9,7 +9,7 @@ public class Bus {
   private PPU ppu;
   private CPU cpu;
   private ROM rom;
-  private int clockCounter = 0;
+  private long clockCounter = 0;
   public int[] controller = new int[2];
   private int[] controllerState = new int[2];
   int[] ram = new int[2048];
