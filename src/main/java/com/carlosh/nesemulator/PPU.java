@@ -2,6 +2,7 @@ package com.carlosh.nesemulator;
 
 import static java.lang.Thread.sleep;
 
+import com.carlosh.nesemulator.mappers.MirroringMode;
 import com.carlosh.nesemulator.ui.ScreenNES;
 import java.lang.reflect.Array;
 import java.util.Arrays;
@@ -245,12 +246,12 @@ public class PPU {
     else if (address <= 0x3EFF) {
       address &= 0x0FFF;
       // Vertical mirroring
-      if (rom.getMirror() == ROM.Mirror.VERTICAL) {
+      if (rom.getMirror() == MirroringMode.VERTICAL) {
         int bit = (address & 0x0400) >> 10;
         return nameTable[bit][address & 0x03FF];
       }
       // Horizontal mirroring
-      else if (rom.getMirror() == ROM.Mirror.HORIZONTAL) {
+      else if (rom.getMirror() == MirroringMode.HORIZONTAL) {
         int bit = (address & 0x0800) >> 11;
         return nameTable[bit][address & 0x03FF];
       }
@@ -289,12 +290,12 @@ public class PPU {
     else if (address <= 0x3EFF) {
       address &= 0x0FFF;
       // Vertical mirroring
-      if (rom.getMirror() == ROM.Mirror.VERTICAL) {
+      if (rom.getMirror() == MirroringMode.VERTICAL) {
         int bit = (address & 0x0400) >> 10;
         nameTable[bit][address & 0x03FF] = data;
       }
       // Horizontal mirroring
-      else if (rom.getMirror() == ROM.Mirror.HORIZONTAL) {
+      else if (rom.getMirror() == MirroringMode.HORIZONTAL) {
         int bit = (address & 0x0800) >> 11;
         nameTable[bit][address & 0x03FF] = data;
       }

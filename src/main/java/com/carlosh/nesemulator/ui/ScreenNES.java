@@ -28,12 +28,9 @@ public class ScreenNES extends Canvas {
     super(NES_WIDTH * SCALE, NES_HEIGHT * SCALE);
     instance = this;
     this.setFocusTraversable(true);
-//    this.setOnKeyPressed(e -> {
-//      System.out.println("A");
-//      KeyController.instance.keyPressed(e);
-//    });
-    this.setOnKeyPressed(KeyController.controller0::keyPressed);
-    this.setOnKeyReleased(KeyController.controller0::keyReleased);
+
+    this.setOnKeyPressed(KeyController::keyPressedStatic);
+    this.setOnKeyReleased(KeyController::keyReleasedStatic);
   }
 
   public void updateScreen(int[][] pixels) {
