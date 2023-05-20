@@ -1034,6 +1034,17 @@ public class CPU {
     return 0;
   }
 
+  // Unofficial opcodes
+
+  private int LAX() {
+    fetch();
+    a = fetched;
+    x_reg = fetched;
+    setStatusFlag(StatusFlag.Z, a == 0x00 ? 1 : 0);
+    setStatusFlag(StatusFlag.N, (a & 0x80) != 0 ? 1 : 0);
+    return 0;
+  }
+
   /**
    * Illegal opcodes. Do nothing.
    *
@@ -1042,6 +1053,8 @@ public class CPU {
   public int XXX() {
     return 0;
   }
+
+
 
   /**
    * Perform one clock cycle.
@@ -1055,7 +1068,7 @@ public class CPU {
       pc++;
       cycles = lookup[opcode].cycles;
 
-      System.out.println(" Opcode: " + opcode);
+      //System.out.println(" Opcode: " + opcode);
 
       if (enableLogs) {
         log("P1: " + opcode + " " + lookup[opcode].name + "\tA: " + a + "\tX: " + x_reg + "\tY: " + y_reg
@@ -1244,7 +1257,7 @@ public class CPU {
     lookup[0x01] = new Instruction("ORA", this::ORA, this::IZX, 6, "IZX");
     lookup[0x02] = new Instruction("XXX", this::XXX, this::IMP, 2, "IMP");
     lookup[0x03] = new Instruction("XXX", this::XXX, this::IMP, 8, "IMP");
-    lookup[0x04] = new Instruction("XXX", this::XXX, this::IMP, 3, "IMP");
+    lookup[0x04] = new Instruction("XXX", this::NOP, this::ZP0, 3, "ZP0");
     lookup[0x05] = new Instruction("ORA", this::ORA, this::ZP0, 3, "ZP0");
     lookup[0x06] = new Instruction("ASL", this::ASL, this::ZP0, 5, "ZP0");
     lookup[0x07] = new Instruction("XXX", this::XXX, this::IMP, 5, "IMP");
@@ -1295,7 +1308,7 @@ public class CPU {
     lookup[0x31] = new Instruction("AND", this::AND, this::IZY, 5, "IZY");
     lookup[0x32] = new Instruction("XXX", this::XXX, this::IMP, 2, "IMP");
     lookup[0x33] = new Instruction("XXX", this::XXX, this::IMP, 8, "IMP");
-    lookup[0x34] = new Instruction("XXX", this::XXX, this::IMP, 4, "IMP");
+    lookup[0x34] = new Instruction("XXX", this::NOP, this::ZPX, 4, "ZPX");
     lookup[0x35] = new Instruction("AND", this::AND, this::ZPX, 4, "ZPX");
     lookup[0x36] = new Instruction("ROL", this::ROL, this::ZPX, 6, "ZPX");
     lookup[0x37] = new Instruction("XXX", this::XXX, this::IMP, 6, "IMP");
@@ -1312,7 +1325,7 @@ public class CPU {
     lookup[0x41] = new Instruction("EOR", this::EOR, this::IZX, 6, "IZX");
     lookup[0x42] = new Instruction("XXX", this::XXX, this::IMP, 2, "IMP");
     lookup[0x43] = new Instruction("XXX", this::XXX, this::IMP, 8, "IMP");
-    lookup[0x44] = new Instruction("XXX", this::XXX, this::IMP, 3, "IMP");
+    lookup[0x44] = new Instruction("XXX", this::NOP, this::ZP0, 3, "ZP0");
     lookup[0x45] = new Instruction("EOR", this::EOR, this::ZP0, 3, "ZP0");
     lookup[0x46] = new Instruction("LSR", this::LSR, this::ZP0, 5, "ZP0");
     lookup[0x47] = new Instruction("XXX", this::XXX, this::IMP, 5, "IMP");
@@ -1329,7 +1342,7 @@ public class CPU {
     lookup[0x51] = new Instruction("EOR", this::EOR, this::IZY, 5, "IZY");
     lookup[0x52] = new Instruction("XXX", this::XXX, this::IMP, 2, "IMP");
     lookup[0x53] = new Instruction("XXX", this::XXX, this::IMP, 8, "IMP");
-    lookup[0x54] = new Instruction("XXX", this::XXX, this::IMP, 4, "IMP");
+    lookup[0x54] = new Instruction("XXX", this::NOP, this::ZPX, 4, "ZPX");
     lookup[0x55] = new Instruction("EOR", this::EOR, this::ZPX, 4, "ZPX");
     lookup[0x56] = new Instruction("LSR", this::LSR, this::ZPX, 6, "ZPX");
     lookup[0x57] = new Instruction("XXX", this::XXX, this::IMP, 6, "IMP");
@@ -1346,7 +1359,7 @@ public class CPU {
     lookup[0x61] = new Instruction("ADC", this::ADC, this::IZX, 6, "IZX");
     lookup[0x62] = new Instruction("XXX", this::XXX, this::IMP, 2, "IMP");
     lookup[0x63] = new Instruction("XXX", this::XXX, this::IMP, 8, "IMP");
-    lookup[0x64] = new Instruction("XXX", this::XXX, this::IMP, 3, "IMP");
+    lookup[0x64] = new Instruction("XXX", this::NOP, this::ZP0, 3, "ZP0");
     lookup[0x65] = new Instruction("ADC", this::ADC, this::ZP0, 3, "ZP0");
     lookup[0x66] = new Instruction("ROR", this::ROR, this::ZP0, 5, "ZP0");
     lookup[0x67] = new Instruction("XXX", this::XXX, this::IMP, 5, "IMP");
@@ -1363,7 +1376,7 @@ public class CPU {
     lookup[0x71] = new Instruction("ADC", this::ADC, this::IZY, 5, "IZY");
     lookup[0x72] = new Instruction("XXX", this::XXX, this::IMP, 2, "IMP");
     lookup[0x73] = new Instruction("XXX", this::XXX, this::IMP, 8, "IMP");
-    lookup[0x74] = new Instruction("XXX", this::XXX, this::IMP, 4, "IMP");
+    lookup[0x74] = new Instruction("XXX", this::NOP, this::ZPX, 4, "ZPX");
     lookup[0x75] = new Instruction("ADC", this::ADC, this::ZPX, 4, "ZPX");
     lookup[0x76] = new Instruction("ROR", this::ROR, this::ZPX, 6, "ZPX");
     lookup[0x77] = new Instruction("XXX", this::XXX, this::IMP, 6, "IMP");
@@ -1385,6 +1398,7 @@ public class CPU {
     lookup[0x86] = new Instruction("STX", this::STX, this::ZP0, 3, "ZP0");
     lookup[0x87] = new Instruction("XXX", this::XXX, this::IMP, 3, "IMP");
     lookup[0x88] = new Instruction("DEY", this::DEY, this::IMP, 2, "IMP");
+    lookup[0x89] = new Instruction("XXX", this::NOP, this::IMM, 2, "IMM");
     lookup[0x8A] = new Instruction("TXA", this::TXA, this::IMP, 2, "IMP");
     lookup[0x8B] = new Instruction("XXX", this::XXX, this::IMP, 2, "IMP");
     lookup[0x8C] = new Instruction("STY", this::STY, this::ABS, 4, "ABS");
@@ -1412,28 +1426,28 @@ public class CPU {
     lookup[0xA0] = new Instruction("LDY", this::LDY, this::IMM, 2, "IMM");
     lookup[0xA1] = new Instruction("LDA", this::LDA, this::IZX, 6, "IZX");
     lookup[0xA2] = new Instruction("LDX", this::LDX, this::IMM, 2, "IMM");
-    lookup[0xA3] = new Instruction("XXX", this::XXX, this::IMP, 6, "IMP");
+    lookup[0xA3] = new Instruction("LAX", this::LAX, this::IZX, 6, "IZX");
     lookup[0xA4] = new Instruction("LDY", this::LDY, this::ZP0, 3, "ZP0");
     lookup[0xA5] = new Instruction("LDA", this::LDA, this::ZP0, 3, "ZP0");
     lookup[0xA6] = new Instruction("LDX", this::LDX, this::ZP0, 3, "ZP0");
-    lookup[0xA7] = new Instruction("XXX", this::XXX, this::IMP, 3, "IMP");
+    lookup[0xA7] = new Instruction("LAX", this::LAX, this::ZP0, 3, "ZP0");
     lookup[0xA8] = new Instruction("TAY", this::TAY, this::IMP, 2, "IMP");
     lookup[0xA9] = new Instruction("LDA", this::LDA, this::IMM, 2, "IMM");
     lookup[0xAA] = new Instruction("TAX", this::TAX, this::IMP, 2, "IMP");
-    lookup[0xAB] = new Instruction("XXX", this::XXX, this::IMP, 2, "IMP");
+    lookup[0xAB] = new Instruction("LAX", this::LAX, this::IMM, 2, "IMM");
     lookup[0xAC] = new Instruction("LDY", this::LDY, this::ABS, 4, "ABS");
     lookup[0xAD] = new Instruction("LDA", this::LDA, this::ABS, 4, "ABS");
     lookup[0xAE] = new Instruction("LDX", this::LDX, this::ABS, 4, "ABS");
-    lookup[0xAF] = new Instruction("XXX", this::XXX, this::IMP, 4, "IMP");
+    lookup[0xAF] = new Instruction("LAX", this::LAX, this::ABS, 4, "ABS");
 
     lookup[0xB0] = new Instruction("BCS", this::BCS, this::REL, 2, "REL");
     lookup[0xB1] = new Instruction("LDA", this::LDA, this::IZY, 5, "IZY");
     lookup[0xB2] = new Instruction("XXX", this::XXX, this::IMP, 2, "IMP");
-    lookup[0xB3] = new Instruction("XXX", this::XXX, this::IMP, 5, "IMP");
+    lookup[0xB3] = new Instruction("LAX", this::LAX, this::IZY, 5, "IZY");
     lookup[0xB4] = new Instruction("LDY", this::LDY, this::ZPX, 4, "ZPX");
     lookup[0xB5] = new Instruction("LDA", this::LDA, this::ZPX, 4, "ZPX");
     lookup[0xB6] = new Instruction("LDX", this::LDX, this::ZPY, 4, "ZPY");
-    lookup[0xB7] = new Instruction("XXX", this::XXX, this::IMP, 4, "IMP");
+    lookup[0xB7] = new Instruction("LAX", this::LAX, this::ZPY, 4, "ZPY");
     lookup[0xB8] = new Instruction("CLV", this::CLV, this::IMP, 2, "IMP");
     lookup[0xB9] = new Instruction("LDA", this::LDA, this::ABY, 4, "ABY");
     lookup[0xBA] = new Instruction("TSX", this::TSX, this::IMP, 2, "IMP");
@@ -1441,7 +1455,7 @@ public class CPU {
     lookup[0xBC] = new Instruction("LDY", this::LDY, this::ABX, 4, "ABX");
     lookup[0xBD] = new Instruction("LDA", this::LDA, this::ABX, 4, "ABX");
     lookup[0xBE] = new Instruction("LDX", this::LDX, this::ABY, 4, "ABY");
-    lookup[0xBF] = new Instruction("XXX", this::XXX, this::IMP, 4, "IMP");
+    lookup[0xBF] = new Instruction("LAX", this::LAX, this::ABY, 4, "ABY");
 
     lookup[0xC0] = new Instruction("CPY", this::CPY, this::IMM, 2, "IMM");
     lookup[0xC1] = new Instruction("CMP", this::CMP, this::IZX, 6, "IZX");
