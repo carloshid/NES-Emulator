@@ -36,16 +36,6 @@ public class KeyController {
    * @param e the key event
    */
   public void keyPressed(KeyEvent e) {
-//    switch (e.getCode()) {
-//      case A -> state |= 0x80;
-//      case B -> state |= 0x40;
-//      case S -> state |= 0x20;
-//      case D -> state |= 0x10;
-//      case UP -> state |= 0x08;
-//      case DOWN -> state |= 0x04;
-//      case LEFT -> state |= 0x02;
-//      case RIGHT -> state |= 0x01;
-//    }
     if (e.getCode() == a) {
       state |= 0x80;
     } else if (e.getCode() == b) {
@@ -66,21 +56,59 @@ public class KeyController {
   }
 
   /**
+   * Sets the bit corresponding to the pressed key to 1.
+   *
+   * @param e the key event
+   */
+  public static void keyPressedStatic(KeyEvent e) {
+    KeyCode[] keyCodes0 = new KeyCode[] { controller0.a, controller0.b, controller0.select,
+        controller0.start, controller0.up, controller0.down, controller0.left, controller0.right };
+    KeyCode[] keyCodes1 = new KeyCode[] { controller1.a, controller1.b, controller1.select,
+        controller1.start, controller1.up, controller1.down, controller1.left, controller1.right };
+
+    for (KeyCode keyCode : keyCodes0) {
+      if (e.getCode() == keyCode) {
+        controller0.keyPressed(e);
+      }
+    }
+
+    for (KeyCode code : keyCodes1) {
+      if (e.getCode() == code) {
+        controller1.keyPressed(e);
+      }
+    }
+  }
+
+  /**
+   * Sets the bit corresponding to the released key to 0.
+   *
+   * @param e the key event
+   */
+  public static void keyReleasedStatic(KeyEvent e) {
+    KeyCode[] keyCodes0 = new KeyCode[] { controller0.a, controller0.b, controller0.select,
+        controller0.start, controller0.up, controller0.down, controller0.left, controller0.right };
+    KeyCode[] keyCodes1 = new KeyCode[] { controller1.a, controller1.b, controller1.select,
+        controller1.start, controller1.up, controller1.down, controller1.left, controller1.right };
+
+    for (KeyCode keyCode : keyCodes0) {
+      if (e.getCode() == keyCode) {
+        controller0.keyReleased(e);
+      }
+    }
+
+    for (KeyCode code : keyCodes1) {
+      if (e.getCode() == code) {
+        controller1.keyReleased(e);
+      }
+    }
+  }
+
+  /**
    * Sets the bit corresponding to the released key to 0.
    *
    * @param e the key event
    */
   public void keyReleased(KeyEvent e) {
-//    switch (e.getCode()) {
-//      case A -> state &= ~0x80;
-//      case B -> state &= ~0x40;
-//      case S -> state &= ~0x20;
-//      case D -> state &= ~0x10;
-//      case UP -> state &= ~0x08;
-//      case DOWN -> state &= ~0x04;
-//      case LEFT -> state &= ~0x02;
-//      case RIGHT -> state &= ~0x01;
-//    }
     if (e.getCode() == a) {
         state &= ~0x80;
     } else if (e.getCode() == b) {

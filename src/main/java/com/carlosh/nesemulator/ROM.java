@@ -2,6 +2,7 @@ package com.carlosh.nesemulator;
 
 import com.carlosh.nesemulator.mappers.Mapper;
 import com.carlosh.nesemulator.mappers.Mapper000;
+import com.carlosh.nesemulator.mappers.Mapper001;
 import com.carlosh.nesemulator.mappers.MirroringMode;
 import java.io.File;
 import java.io.FileInputStream;
@@ -89,7 +90,9 @@ public class ROM {
         mapper = new Mapper000(prgBanks, chrBanks);
         break;
       }
-      // TODO: Add more mappers
+      case 1: {
+        mapper = new Mapper001(prgBanks, chrBanks);
+      }
     }
 
     valid = true;

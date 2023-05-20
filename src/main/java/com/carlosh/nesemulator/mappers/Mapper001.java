@@ -141,6 +141,6 @@ public class Mapper001 implements Mapper {
 
   @Override
   public MirroringMode getMirroringMode() {
-    return null;
+    return mirroringMode;
   }
 }
