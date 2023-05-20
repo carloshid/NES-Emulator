@@ -15,6 +15,7 @@ public class ROM {
   private String filename;
 
   private List<Integer> prgROM = new ArrayList<>();
+  private int extraAddress = 0;
   private List<Integer> chrROM = new ArrayList<>();
   private ROM_Header header;
   private Mapper mapper;
@@ -102,6 +103,7 @@ public class ROM {
     int[] mappedResult = mapper.cpuRead(address);
     //int mappedAddress = mapper.cpuRead(address);
     if (mappedResult[0] == -1) {
+      //return extraAddress;
       return mappedResult[1];
     } else if (mappedResult[0] != -2) {
       return prgROM.get(mappedResult[0]);
@@ -111,6 +113,10 @@ public class ROM {
 
   public boolean cpuWrite(int address, int data) {
     int mappedAddress = mapper.cpuWrite(address, data);
+    if (mappedAddress == -1) {
+      extraAddress = data;
+      return true;
+    }
     if (mappedAddress != -2) {
       prgROM.set(mappedAddress, data);
       return true;
