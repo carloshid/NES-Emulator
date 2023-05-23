@@ -1062,54 +1062,26 @@ public class CPU {
   }
 
   private int DCP() {
-    int value = fetch() - 1;
-    write(address_abs, value & 0x00FF);
-    setStatusFlag(StatusFlag.Z, (value & 0x00FF) == 0 ? 1 : 0);
-    setStatusFlag(StatusFlag.N, value & (1 << 7));
-    value = a - fetch();
-    setStatusFlag(StatusFlag.C, a >= fetched ? 1 : 0);
-    setStatusFlag(StatusFlag.Z, (value & 0x00FF) == 0 ? 1 : 0);
-    setStatusFlag(StatusFlag.N, value & (1 << 7));
-
+    DEC();
+    CMP();
     return 0;
   }
 
   private int ISC() {
-    int value = fetch() + 1;
-    write(address_abs, value & 0x00FF);
-    setStatusFlag(StatusFlag.Z, (value & 0x00FF) == 0 ? 1 : 0);
-    setStatusFlag(StatusFlag.N, value & (1 << 7));
-    value = a - fetch() - (1 - getStatusFlag(StatusFlag.C));
-    setStatusFlag(StatusFlag.C, a >= fetched ? 1 : 0);
-    setStatusFlag(StatusFlag.Z, (value & 0x00FF) == 0 ? 1 : 0);
-    setStatusFlag(StatusFlag.N, value & (1 << 7));
+    INC();
+    SBC();
     return 0;
   }
 
   private int RLA() {
-    fetch();
-    int temp = fetched;
-    temp <<= 1;
-    temp |= getStatusFlag(StatusFlag.C);
-    write(address_abs, temp & 0x00FF);
-    a &= temp;
-    setStatusFlag(StatusFlag.C, (temp & 0xFF00) != 0 ? 1 : 0);
-    setStatusFlag(StatusFlag.Z, a == 0x00 ? 1 : 0);
-    setStatusFlag(StatusFlag.N, (a & 0x80) != 0 ? 1 : 0);
+    ROL();
+    AND();
     return 0;
   }
 
   private int RRA() {
-    fetch();
-    int temp = fetched;
-    temp |= getStatusFlag(StatusFlag.C) << 8;
-    setStatusFlag(StatusFlag.C, (temp & 0x0001) != 0 ? 1 : 0);
-    temp >>= 1;
-    write(address_abs, temp & 0x00FF);
-    a += temp + getStatusFlag(StatusFlag.C);
-    setStatusFlag(StatusFlag.C, (a & 0xFF00) != 0 ? 1 : 0);
-    setStatusFlag(StatusFlag.Z, a == 0x00 ? 1 : 0);
-    setStatusFlag(StatusFlag.N, (a & 0x80) != 0 ? 1 : 0);
+    ROR();
+    ADC();
     return 0;
   }
 
