@@ -4,6 +4,7 @@ import com.carlosh.nesemulator.mappers.Mapper;
 import com.carlosh.nesemulator.mappers.Mapper000;
 //import com.carlosh.nesemulator.mappers.Mapper001;
 import com.carlosh.nesemulator.mappers.Mapper002;
+import com.carlosh.nesemulator.mappers.Mapper003;
 import com.carlosh.nesemulator.mappers.MirroringMode;
 import java.io.File;
 import java.io.FileInputStream;
@@ -155,6 +156,8 @@ public class ROM {
       chrMap[i] = (1024 * i) & ((chrSize) - 1);
     }
 
+    System.out.println("Mapper: " + mapperID);
+
     // Load mapper
     switch (mapperID) {
       case 0: {
@@ -167,6 +170,10 @@ public class ROM {
 //      }
       case 2: {
         mapper = new Mapper002(prgBanks, chrBanks, this);
+        break;
+      }
+      case 3: {
+        mapper = new Mapper003(prgBanks, chrBanks, this);
         break;
       }
     }
