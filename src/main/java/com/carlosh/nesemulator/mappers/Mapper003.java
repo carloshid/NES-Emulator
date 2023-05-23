@@ -3,7 +3,7 @@ package com.carlosh.nesemulator.mappers;
 import com.carlosh.nesemulator.ROM;
 
 /**
- * TODO : Mapper 003: CxROM.
+ * Mapper 003: CNROM.
  */
 public class Mapper003 implements Mapper {
 

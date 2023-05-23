@@ -3,7 +3,7 @@ package com.carlosh.nesemulator.mappers;
 import com.carlosh.nesemulator.ROM;
 
 /**
- * TODO : Mapper 002: UNROM.
+ * Mapper 002: UNROM.
  */
 public class Mapper002 implements Mapper {
 
@@ -16,7 +16,6 @@ public class Mapper002 implements Mapper {
     this.prgBanks = prgBanks;
     this.chrBanks = chrBanks;
     this.rom = rom;
-
     for (int i = 0; i < 16; ++i) {
       rom.prgMap[i] = (1024 * i) & (rom.prgSize - 1);
     }

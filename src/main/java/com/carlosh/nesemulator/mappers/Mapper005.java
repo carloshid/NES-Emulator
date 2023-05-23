@@ -1,7 +1,7 @@
 //package com.carlosh.nesemulator.mappers;
 //
 ///**
-// * TODO : Mapper 004: MMC5.
+// * TODO : Mapper 005: MMC5.
 // */
 //public class Mapper005 implements Mapper {
 //

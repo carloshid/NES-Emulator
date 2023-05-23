@@ -255,6 +255,14 @@ public class PPU {
         int bit = (address & 0x0800) >> 11;
         return nameTable[bit][address & 0x03FF];
       }
+
+      else if (rom.getMirror() == MirroringMode.ONESCREENLOW) {
+        return nameTable[0][address & 0x03FF];
+      }
+
+      else if (rom.getMirror() == MirroringMode.ONESCREENHIGH) {
+        return nameTable[1][address & 0x03FF];
+      }
     }
     // Palette memory
     else {
@@ -298,6 +306,14 @@ public class PPU {
       else if (rom.getMirror() == MirroringMode.HORIZONTAL) {
         int bit = (address & 0x0800) >> 11;
         nameTable[bit][address & 0x03FF] = data;
+      }
+
+      else if (rom.getMirror() == MirroringMode.ONESCREENLOW) {
+        nameTable[0][address & 0x03FF] = data;
+      }
+
+      else if (rom.getMirror() == MirroringMode.ONESCREENHIGH) {
+        nameTable[1][address & 0x03FF] = data;
       }
     }
     // Palette memory
