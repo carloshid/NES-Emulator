@@ -414,20 +414,21 @@ public class PPU {
           } else {
             // 8x16 sprites
             addressLow = ((secondaryOam[i].tileIndex & 0x01) << 12);
-            if (currentY - secondaryOam[i].getY() < 8) {
-              // Top 8x8 half of the sprite
-              addressLow |= ((secondaryOam[i].tileIndex & 0xFE) << 4);
-            } else {
-              // Bottom 8x8 half of the sprite
-              addressLow |= (((secondaryOam[i].tileIndex | 0xFE) + 1) << 4);
-            }
+            boolean top = currentY - secondaryOam[i].getY() < 8;
+            boolean flipped = ((secondaryOam[i].attributes & 0x80) & 0x80) != 0;
 
-            if ((secondaryOam[i].attributes & 0x80) != 0) {
-              // Vertical flip
-              addressLow |= 0x07 - (currentY - secondaryOam[i].getY() & 0x07);
+            if (top && flipped) {
+              // Top 8x8 half of the sprite, vertically flipped
+              addressLow |= (((secondaryOam[i].tileIndex & 0xFE) + 1) << 4) | (7 - (currentY - secondaryOam[i].getY()) & 0x07);
+            } else if (top && !flipped) {
+              // Top 8x8 half of the sprite, not vertically flipped
+              addressLow |= ((secondaryOam[i].tileIndex & 0xFE) << 4) | ((currentY - secondaryOam[i].getY()) & 0x07);
+            } else if (!top && flipped) {
+              // Bottom 8x8 half of the sprite, vertically flipped
+              addressLow |= ((secondaryOam[i].tileIndex & 0xFE) << 4) | (7 - (currentY - secondaryOam[i].getY()) & 0x07);
             } else {
-              // No vertical flip
-              addressLow |= currentY - secondaryOam[i].getY() & 0x07;
+              // Bottom 8x8 half of the sprite, not vertically flipped
+              addressLow |= (((secondaryOam[i].tileIndex & 0xFE) + 1) << 4) | ((currentY - secondaryOam[i].getY()) & 0x07);
             }
           }
 

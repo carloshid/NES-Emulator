@@ -3,7 +3,7 @@ package com.carlosh.nesemulator;
 import com.carlosh.nesemulator.mappers.Mapper;
 import com.carlosh.nesemulator.mappers.Mapper000;
 //import com.carlosh.nesemulator.mappers.Mapper001;
-//import com.carlosh.nesemulator.mappers.Mapper002;
+import com.carlosh.nesemulator.mappers.Mapper002;
 import com.carlosh.nesemulator.mappers.MirroringMode;
 import java.io.File;
 import java.io.FileInputStream;
@@ -165,10 +165,10 @@ public class ROM {
 //        mapper = new Mapper001(prgBanks, chrBanks);
 //        break;
 //      }
-//      case 2: {
-//        mapper = new Mapper002(prgBanks, chrBanks, this);
-//        break;
-//      }
+      case 2: {
+        mapper = new Mapper002(prgBanks, chrBanks, this);
+        break;
+      }
     }
 
     valid = true;
