@@ -1,5 +1,9 @@
 package com.carlosh.nesemulator.mappers;
 
+import com.carlosh.nesemulator.ROM;
+import java.util.ArrayList;
+import java.util.Arrays;
+
 /**
  * Mapper 000: NROM.
  */
@@ -7,33 +11,36 @@ public class Mapper000 implements Mapper {
 
   private int prgBanks;
   private int chrBanks;
+  private ROM rom;
 
-  public Mapper000(int prgBanks, int chrBanks) {
+  public Mapper000(int prgBanks, int chrBanks, ROM rom) {
     this.prgBanks = prgBanks;
     this.chrBanks = chrBanks;
+    this.rom = rom;
+    int[] temp = new int[65536];
+    System.arraycopy(rom.prgROM, 0, temp, 0x8000, rom.prgROM.length);
+    if (rom.prgSize <= 16384) System.arraycopy(rom.prgROM, 0, temp, 0xc000, rom.prgROM.length);
+    rom.prgROM = temp;
   }
 
   @Override
-  public int[] cpuRead(int address) {
+  public int cpuRead(int address) {
     if (address >= 0x8000 && address <= 0xFFFF) {
-      int mappedAddress = address & (prgBanks > 1 ? 0x7FFF : 0x3FFF);
-      return new int[] { mappedAddress, 0 };
+      //return rom.prgROM.get(address);
+      return rom.prgROM[address];
     }
-    return new int[] {-2, 0};
+    return 0;
   }
 
   @Override
   public int cpuWrite(int address, int data) {
-    if (address >= 0x8000 && address <= 0xFFFF) {
-      return address & (prgBanks > 1 ? 0x7FFF : 0x3FFF);
-    }
     return -2;
   }
 
   @Override
   public int ppuRead(int address) {
     if (address >= 0x0000 && address <= 0x1FFF) {
-      return address;
+      return rom.chrROM[address];
     }
     return -2;
   }
