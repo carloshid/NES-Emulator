@@ -193,16 +193,13 @@ public class ROM {
   }
 
   public int ppuRead(int address) {
-    //System.out.println("PPU READ");
     int mappedAddress = mapper.ppuRead(address);
     if (mappedAddress != -2) {
-      //System.out.println("mappedAddress " + mappedAddress);
       if (chrROM.size() > 0) {
-        System.out.println("AAAA");
         return chrROM.get(mappedAddress);
       } else {
         int bank = address >> 10;
-        int offset = mappedAddress & 1023;
+        int offset = address & 1023;
 
         int a = chrMap[bank] + offset;
 
@@ -218,12 +215,11 @@ public class ROM {
     int mappedAddress = mapper.ppuWrite(address);
     if (mappedAddress != -2) {
       if (chrROM.size() > 0) {
-        System.out.println("AAAA");
         chrROM.set(mappedAddress, data);
         return true;
       } else {
         int bank = address >> 10;
-        int offset = mappedAddress & 1023;
+        int offset = address & 1023;
 
         int a = chrMap[bank] + offset;
 
