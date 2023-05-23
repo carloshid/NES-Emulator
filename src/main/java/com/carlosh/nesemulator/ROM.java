@@ -229,7 +229,7 @@ public class ROM {
 
       int a = chrMap[bank] + offset;
 
-      return chrRAM[a];
+      return chrROM[a];
     }
 
     return -2;
@@ -247,7 +247,7 @@ public class ROM {
 
       int a = chrMap[bank] + offset;
 
-      chrRAM[a] = data;
+      chrROM[a] = data;
 
       return true;
     }
