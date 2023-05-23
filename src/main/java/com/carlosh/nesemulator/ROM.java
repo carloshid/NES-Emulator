@@ -3,6 +3,7 @@ package com.carlosh.nesemulator;
 import com.carlosh.nesemulator.mappers.Mapper;
 import com.carlosh.nesemulator.mappers.Mapper000;
 import com.carlosh.nesemulator.mappers.Mapper001;
+import com.carlosh.nesemulator.mappers.Mapper002;
 import com.carlosh.nesemulator.mappers.MirroringMode;
 import java.io.File;
 import java.io.FileInputStream;
@@ -19,6 +20,9 @@ public class ROM {
   private List<Integer> chrROM = new ArrayList<>();
   private ROM_Header header;
   private Mapper mapper;
+
+  int[] prgMap;
+  int[] chrMap;
 
   private int mapperID = 0;
   private int prgBanks = 0;
@@ -49,6 +53,10 @@ public class ROM {
 
     header = loadHeader(romBytes);
 
+    System.out.println("ROM name: " + header.name);
+    System.out.println("PRG ROM size: " + header.prgROMSize);
+    System.out.println("CHR ROM size: " + header.chrROMSize);
+
 
     int start = 16;
     if ((header.mapper1 & 0x04) != 0) {
@@ -61,6 +69,8 @@ public class ROM {
 
     // File type
     int fileType = (header.mapper2 & 0x0C) == 0x08 ? 2 : 1;
+
+    //System.out.println("File type: " + fileType);
 
     if (fileType == 1) {
       prgBanks = header.prgROMSize;
@@ -78,13 +88,52 @@ public class ROM {
       for (int i = start; i < start + prgBanks * 16384; i++) {
         prgROM.add(romBytes[i]);
       }
-      chrBanks = ((header.prgRAMSize & 0x38) << 8) | header.chrROMSize;
+
+      //System.out.println("prgBanks: " + prgBanks);
+
+      chrBanks = (((header.prgRAMSize & 0x38) << 8) & 0xFF) | header.chrROMSize;
+
+      //System.out.println(header.prgRAMSize + " " + header.chrROMSize);
+
+      int a = 8192 * (header.chrROMSize + ((header.tvSystem1 >> 4) << 8));
+
+      int chrSize = Math.min(romBytes.length - 16 - prgROM.size(), a);
+
+
       start = start + prgBanks * 16384;
-      int end = start + chrBanks * 8192;
+      //int end = start + chrBanks * 8192;
+      int end = start + chrSize;
+
+      //System.out.println("chrBanks: " + chrBanks);
+      //System.out.println(start + " " + end + " " + romBytes.length);
+
       for (int i = start; i < end; i++) {
         chrROM.add(romBytes[i]);
       }
+
+      /////
+
+
+      if (chrSize == 0) {
+        chrSize = 8192;
+        //chrROM = new int[chrSize];
+      }
+
+      prgMap = new int[32];
+      for (int i = 0; i < 32; ++i) {
+        prgMap[i] = (1024 * i) & ((prgBanks * 16384) - 1);
+      }
+      chrMap = new int[8];
+      for (int i = 0; i < 8; ++i) {
+        chrMap[i] = (1024 * i) & ((chrSize) - 1);
+      }
+
+
+
+      /////
+
     }
+
     // Load mapper
     switch (mapperID) {
       case 0: {
@@ -93,6 +142,11 @@ public class ROM {
       }
       case 1: {
         mapper = new Mapper001(prgBanks, chrBanks);
+        break;
+      }
+      case 2: {
+        mapper = new Mapper002(prgBanks, chrBanks);
+        break;
       }
     }
 
@@ -129,7 +183,14 @@ public class ROM {
     int mappedAddress = mapper.ppuRead(address);
     if (mappedAddress != -2) {
       //System.out.println("mappedAddress " + mappedAddress);
-      return chrROM.get(mappedAddress);
+      if (chrROM.size() > 0) {
+        return chrROM.get(mappedAddress);
+      } else {
+        int bank = mappedAddress / 1024;
+        int offset = mappedAddress % 1024;
+        return prgROM.get(bank * 1024 + offset);
+      }
+
     }
     return -2;
   }
