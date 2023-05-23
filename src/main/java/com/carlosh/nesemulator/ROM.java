@@ -15,18 +15,24 @@ public class ROM {
   private int[] romBytes;
   private String filename;
 
-  private List<Integer> prgROM = new ArrayList<>();
+  public List<Integer> prgROM = new ArrayList<>();
   private int extraAddress = 0;
-  private List<Integer> chrROM = new ArrayList<>();
+  public List<Integer> chrROM = new ArrayList<>();
   private ROM_Header header;
   private Mapper mapper;
 
-  int[] prgMap;
-  int[] chrMap;
+  public int[] prgMap;
+  public int[] chrMap;
+
+  int[] chrRAM = new int[8192];
+  boolean hasChrRAM = false;
 
   private int mapperID = 0;
   private int prgBanks = 0;
   private int chrBanks = 0;
+
+  public int prgSize = 0;
+  public int chrSize = 0;
 
   private boolean valid = false;
   private MirroringMode mirror = MirroringMode.HORIZONTAL;
@@ -85,6 +91,8 @@ public class ROM {
       }
     } else if (fileType == 2) {
       prgBanks = ((header.prgRAMSize & 0x07) << 8) | header.prgROMSize;
+      prgSize = prgBanks * 16384;
+
       for (int i = start; i < start + prgBanks * 16384; i++) {
         prgROM.add(romBytes[i]);
       }
@@ -97,7 +105,7 @@ public class ROM {
 
       int a = 8192 * (header.chrROMSize + ((header.tvSystem1 >> 4) << 8));
 
-      int chrSize = Math.min(romBytes.length - 16 - prgROM.size(), a);
+      chrSize = Math.min(romBytes.length - 16 - prgROM.size(), a);
 
 
       start = start + prgBanks * 16384;
@@ -116,6 +124,7 @@ public class ROM {
 
       if (chrSize == 0) {
         chrSize = 8192;
+        hasChrRAM = true;
         //chrROM = new int[chrSize];
       }
 
@@ -127,6 +136,8 @@ public class ROM {
       for (int i = 0; i < 8; ++i) {
         chrMap[i] = (1024 * i) & ((chrSize) - 1);
       }
+
+
 
 
 
@@ -145,7 +156,7 @@ public class ROM {
         break;
       }
       case 2: {
-        mapper = new Mapper002(prgBanks, chrBanks);
+        mapper = new Mapper002(prgBanks, chrBanks, this);
         break;
       }
     }
@@ -167,6 +178,9 @@ public class ROM {
 
   public boolean cpuWrite(int address, int data) {
     int mappedAddress = mapper.cpuWrite(address, data);
+    if (mappedAddress == -3) {
+      return true;
+    }
     if (mappedAddress == -1) {
       extraAddress = data;
       return true;
@@ -184,11 +198,15 @@ public class ROM {
     if (mappedAddress != -2) {
       //System.out.println("mappedAddress " + mappedAddress);
       if (chrROM.size() > 0) {
+        System.out.println("AAAA");
         return chrROM.get(mappedAddress);
       } else {
-        int bank = mappedAddress / 1024;
-        int offset = mappedAddress % 1024;
-        return prgROM.get(bank * 1024 + offset);
+        int bank = address >> 10;
+        int offset = mappedAddress & 1023;
+
+        int a = chrMap[bank] + offset;
+
+        return chrRAM[a];
       }
 
     }
@@ -199,8 +217,22 @@ public class ROM {
     //System.out.println("PPU WRITE");
     int mappedAddress = mapper.ppuWrite(address);
     if (mappedAddress != -2) {
-      chrROM.set(mappedAddress, data);
-      return true;
+      if (chrROM.size() > 0) {
+        System.out.println("AAAA");
+        chrROM.set(mappedAddress, data);
+        return true;
+      } else {
+        int bank = address >> 10;
+        int offset = mappedAddress & 1023;
+
+        int a = chrMap[bank] + offset;
+
+        chrRAM[a] = data;
+
+        return true;
+      }
+
+
     }
     return false;
   }
