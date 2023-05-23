@@ -1061,6 +1061,19 @@ public class CPU {
     return 0;
   }
 
+  private int DCP() {
+    int value = fetch() - 1;
+    write(address_abs, value & 0x00FF);
+    setStatusFlag(StatusFlag.Z, (value & 0x00FF) == 0 ? 1 : 0);
+    setStatusFlag(StatusFlag.N, value & (1 << 7));
+    value = a - fetch();
+    setStatusFlag(StatusFlag.C, a >= fetched ? 1 : 0);
+    setStatusFlag(StatusFlag.Z, (value & 0x00FF) == 0 ? 1 : 0);
+    setStatusFlag(StatusFlag.N, value & (1 << 7));
+
+    return 0;
+  }
+
   /**
    * Illegal opcodes. Do nothing.
    *
@@ -1477,11 +1490,11 @@ public class CPU {
     lookup[0xC0] = new Instruction("CPY", this::CPY, this::IMM, 2, "IMM");
     lookup[0xC1] = new Instruction("CMP", this::CMP, this::IZX, 6, "IZX");
     lookup[0xC2] = new Instruction("NOP", this::NOP, this::IMM, 2, "IMM");
-    lookup[0xC3] = new Instruction("XXX", this::XXX, this::IMP, 8, "IMP");
+    lookup[0xC3] = new Instruction("DCP", this::DCP, this::IZX, 8, "IZX");
     lookup[0xC4] = new Instruction("CPY", this::CPY, this::ZP0, 3, "ZP0");
     lookup[0xC5] = new Instruction("CMP", this::CMP, this::ZP0, 3, "ZP0");
     lookup[0xC6] = new Instruction("DEC", this::DEC, this::ZP0, 5, "ZP0");
-    lookup[0xC7] = new Instruction("XXX", this::XXX, this::IMP, 5, "IMP");
+    lookup[0xC7] = new Instruction("DCP", this::DCP, this::ZP0, 5, "ZP0");
     lookup[0xC8] = new Instruction("INY", this::INY, this::IMP, 2, "IMP");
     lookup[0xC9] = new Instruction("CMP", this::CMP, this::IMM, 2, "IMM");
     lookup[0xCA] = new Instruction("DEX", this::DEX, this::IMP, 2, "IMP");
@@ -1489,24 +1502,24 @@ public class CPU {
     lookup[0xCC] = new Instruction("CPY", this::CPY, this::ABS, 4, "ABS");
     lookup[0xCD] = new Instruction("CMP", this::CMP, this::ABS, 4, "ABS");
     lookup[0xCE] = new Instruction("DEC", this::DEC, this::ABS, 6, "ABS");
-    lookup[0xCF] = new Instruction("XXX", this::XXX, this::IMP, 6, "IMP");
+    lookup[0xCF] = new Instruction("DCP", this::DCP, this::ABS, 6, "ABS");
 
     lookup[0xD0] = new Instruction("BNE", this::BNE, this::REL, 2, "REL");
     lookup[0xD1] = new Instruction("CMP", this::CMP, this::IZY, 5, "IZY");
     lookup[0xD2] = new Instruction("XXX", this::XXX, this::IMP, 2, "IMP");
-    lookup[0xD3] = new Instruction("XXX", this::XXX, this::IMP, 8, "IMP");
+    lookup[0xD3] = new Instruction("DCP", this::DCP, this::IZY, 8, "IZY");
     lookup[0xD4] = new Instruction("NOP", this::NOP, this::ZPX, 4, "ZPX");
     lookup[0xD5] = new Instruction("CMP", this::CMP, this::ZPX, 4, "ZPX");
     lookup[0xD6] = new Instruction("DEC", this::DEC, this::ZPX, 6, "ZPX");
-    lookup[0xD7] = new Instruction("XXX", this::XXX, this::IMP, 6, "IMP");
+    lookup[0xD7] = new Instruction("DCP", this::DCP, this::ZPX, 6, "ZPX");
     lookup[0xD8] = new Instruction("CLD", this::CLD, this::IMP, 2, "IMP");
     lookup[0xD9] = new Instruction("CMP", this::CMP, this::ABY, 4, "ABY");
     lookup[0xDA] = new Instruction("NOP", this::NOP, this::IMP, 2, "IMP");
-    lookup[0xDB] = new Instruction("XXX", this::XXX, this::IMP, 7, "IMP");
+    lookup[0xDB] = new Instruction("DCP", this::DCP, this::ABY, 7, "ABY");
     lookup[0xDC] = new Instruction("XXX", this::NOP, this::ABX, 4, "ABX");
     lookup[0xDD] = new Instruction("CMP", this::CMP, this::ABX, 4, "ABX");
     lookup[0xDE] = new Instruction("DEC", this::DEC, this::ABX, 7, "ABX");
-    lookup[0xDF] = new Instruction("XXX", this::XXX, this::IMP, 7, "IMP");
+    lookup[0xDF] = new Instruction("DCP", this::DCP, this::ABX, 7, "ABX");
 
     lookup[0xE0] = new Instruction("CPX", this::CPX, this::IMM, 2, "IMM");
     lookup[0xE1] = new Instruction("SBC", this::SBC, this::IZX, 6, "IZX");
