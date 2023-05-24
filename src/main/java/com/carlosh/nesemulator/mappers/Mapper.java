@@ -11,7 +11,7 @@ public interface Mapper {
    * @param address The address to be mapped.
    * @return An array of 2 integers.
    */
-  int[] cpuRead(int address);
+  int cpuRead(int address);
   int cpuWrite(int address, int data);
   int ppuRead(int address);
   int ppuWrite(int address);

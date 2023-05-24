@@ -255,6 +255,14 @@ public class PPU {
         int bit = (address & 0x0800) >> 11;
         return nameTable[bit][address & 0x03FF];
       }
+
+      else if (rom.getMirror() == MirroringMode.ONESCREENLOW) {
+        return nameTable[0][address & 0x03FF];
+      }
+
+      else if (rom.getMirror() == MirroringMode.ONESCREENHIGH) {
+        return nameTable[1][address & 0x03FF];
+      }
     }
     // Palette memory
     else {
@@ -298,6 +306,14 @@ public class PPU {
       else if (rom.getMirror() == MirroringMode.HORIZONTAL) {
         int bit = (address & 0x0800) >> 11;
         nameTable[bit][address & 0x03FF] = data;
+      }
+
+      else if (rom.getMirror() == MirroringMode.ONESCREENLOW) {
+        nameTable[0][address & 0x03FF] = data;
+      }
+
+      else if (rom.getMirror() == MirroringMode.ONESCREENHIGH) {
+        nameTable[1][address & 0x03FF] = data;
       }
     }
     // Palette memory
@@ -414,20 +430,21 @@ public class PPU {
           } else {
             // 8x16 sprites
             addressLow = ((secondaryOam[i].tileIndex & 0x01) << 12);
-            if (currentY - secondaryOam[i].getY() < 8) {
-              // Top 8x8 half of the sprite
-              addressLow |= ((secondaryOam[i].tileIndex & 0xFE) << 4);
-            } else {
-              // Bottom 8x8 half of the sprite
-              addressLow |= (((secondaryOam[i].tileIndex | 0xFE) + 1) << 4);
-            }
+            boolean top = currentY - secondaryOam[i].getY() < 8;
+            boolean flipped = ((secondaryOam[i].attributes & 0x80) & 0x80) != 0;
 
-            if ((secondaryOam[i].attributes & 0x80) != 0) {
-              // Vertical flip
-              addressLow |= 0x07 - (currentY - secondaryOam[i].getY() & 0x07);
+            if (top && flipped) {
+              // Top 8x8 half of the sprite, vertically flipped
+              addressLow |= (((secondaryOam[i].tileIndex & 0xFE) + 1) << 4) | (7 - (currentY - secondaryOam[i].getY()) & 0x07);
+            } else if (top && !flipped) {
+              // Top 8x8 half of the sprite, not vertically flipped
+              addressLow |= ((secondaryOam[i].tileIndex & 0xFE) << 4) | ((currentY - secondaryOam[i].getY()) & 0x07);
+            } else if (!top && flipped) {
+              // Bottom 8x8 half of the sprite, vertically flipped
+              addressLow |= ((secondaryOam[i].tileIndex & 0xFE) << 4) | (7 - (currentY - secondaryOam[i].getY()) & 0x07);
             } else {
-              // No vertical flip
-              addressLow |= currentY - secondaryOam[i].getY() & 0x07;
+              // Bottom 8x8 half of the sprite, not vertically flipped
+              addressLow |= (((secondaryOam[i].tileIndex & 0xFE) + 1) << 4) | ((currentY - secondaryOam[i].getY()) & 0x07);
             }
           }
 

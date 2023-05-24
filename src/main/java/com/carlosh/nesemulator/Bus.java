@@ -19,10 +19,14 @@ public class Bus {
   boolean dmaWaiting = true;
 
   public void write (int address, int data) {
-    if (rom.cpuWrite(address, data)) {
-      return;
+    if (address >= 0x4019) {
+      rom.cpuWrite(address, data);
     }
-    if (address >= 0x0000 && address <= 0x1FFF) {
+
+//    if (rom.cpuWrite(address, data)) {
+//      return;
+//    }
+    else if (address >= 0x0000 && address <= 0x1FFF) {
       ram[address & 0x07FF] = data;
     } else if (address >= 0x2000 && address <= 0x3FFF) {
       ppu.cpuWrite(address & 0x0007, data);
@@ -37,11 +41,15 @@ public class Bus {
   public int read(int address, boolean readOnly) {
     int data = -3;
 
-    int romData = rom.cpuRead(address, readOnly);
-    if (romData != -2) {
-      return romData;
+    if (address >= 0x4019) {
+      return rom.cpuRead(address, readOnly);
     }
-    if (address >= 0x0000 && address <= 0x1FFF) {
+
+//    int romData = rom.cpuRead(address, readOnly);
+//    if (romData != -2) {
+//      return romData;
+//    }
+    else if (address >= 0x0000 && address <= 0x1FFF) {
       data = ram[address & 0x07FF];
       return data;
     } else if (address >= 0x2000 && address <= 0x3FFF) {
