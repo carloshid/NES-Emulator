@@ -1091,6 +1091,12 @@ public class CPU {
     return 0;
   }
 
+  private int ANC() {
+    AND();
+    setStatusFlag(StatusFlag.C, (a & 0x80) != 0 ? 1 : 0);
+    return 0;
+  }
+
   /**
    * Illegal opcodes. Do nothing.
    *
@@ -1309,7 +1315,7 @@ public class CPU {
     lookup[0x08] = new Instruction("PHP", this::PHP, this::IMP, 3, "IMP");
     lookup[0x09] = new Instruction("ORA", this::ORA, this::IMM, 2, "IMM");
     lookup[0x0A] = new Instruction("ASL", this::ASL, this::IMP, 2, "IMP");
-    lookup[0x0B] = new Instruction("XXX", this::XXX, this::IMP, 2, "IMP");
+    lookup[0x0B] = new Instruction("ANC", this::ANC, this::IMM, 2, "IMM");
     lookup[0x0C] = new Instruction("XXX", this::NOP, this::ABS, 4, "ABS");
     lookup[0x0D] = new Instruction("ORA", this::ORA, this::ABS, 4, "ABS");
     lookup[0x0E] = new Instruction("ASL", this::ASL, this::ABS, 6, "ABS");
@@ -1343,7 +1349,7 @@ public class CPU {
     lookup[0x28] = new Instruction("PLP", this::PLP, this::IMP, 4, "IMP");
     lookup[0x29] = new Instruction("AND", this::AND, this::IMM, 2, "IMM");
     lookup[0x2A] = new Instruction("ROL", this::ROL, this::IMP, 2, "IMP");
-    lookup[0x2B] = new Instruction("XXX", this::XXX, this::IMP, 2, "IMP");
+    lookup[0x2B] = new Instruction("ANC", this::ANC, this::IMM, 2, "IMM");
     lookup[0x2C] = new Instruction("BIT", this::BIT, this::ABS, 4, "ABS");
     lookup[0x2D] = new Instruction("AND", this::AND, this::ABS, 4, "ABS");
     lookup[0x2E] = new Instruction("ROL", this::ROL, this::ABS, 6, "ABS");
