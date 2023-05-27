@@ -7,19 +7,14 @@ import com.carlosh.nesemulator.ROM;
  */
 public class Mapper003 implements Mapper {
 
-  private int prgBanks;
-  private int chrBanks;
-
   private ROM rom;
 
-  public Mapper003(int prgBanks, int chrBanks, ROM rom) {
-    this.prgBanks = prgBanks;
-    this.chrBanks = chrBanks;
+  public Mapper003(ROM rom) {
     this.rom = rom;
-    for (int i = 0; i < 32; ++i) {
+    for (int i = 0; i < 32; i++) {
       rom.prgMap[i] = (1024 * i) & (rom.prgSize - 1);
     }
-    for (int i = 0; i < 8; ++i) {
+    for (int i = 0; i < 8; i++) {
       rom.chrMap[i] = (1024 * i) & (rom.chrSize - 1);
     }
   }
@@ -32,7 +27,7 @@ public class Mapper003 implements Mapper {
   @Override
   public int cpuWrite(int address, int data) {
     if (address >= 0x8000 && address <= 0xFFFF) {
-      for (int i = 0; i < 8; ++i) {
+      for (int i = 0; i < 8; i++) {
         rom.chrMap[i] = ((((data & 0xFF) * 8) + i) * 1024) & (rom.chrSize - 1);
       }
       return 0;

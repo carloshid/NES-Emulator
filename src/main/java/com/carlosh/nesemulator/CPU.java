@@ -42,7 +42,7 @@ public class CPU {
       log("Reading from address " + address + "\n");
     }
 
-    return bus.read(address, false);
+    return bus.read(address);
   }
 
   /**
@@ -1108,8 +1108,6 @@ public class CPU {
       setStatusFlag(StatusFlag.U, 1);
       pc++;
       cycles = lookup[opcode].cycles;
-
-      //System.out.println(" Opcode: " + opcode);
 
       if (enableLogs) {
         log("P1: " + opcode + " " + lookup[opcode].name + "\tA: " + a + "\tX: " + x_reg + "\tY: " + y_reg

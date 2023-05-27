@@ -108,7 +108,12 @@ public class Main extends Application {
           }
 
 
-          ScreenNES.getInstance().updateScreen(PPU.instance.pixels);
+          try {
+            ScreenNES.getInstance().updateScreen(PPU.instance.pixels);
+          } catch (Exception e) {
+            System.out.println("Error updating screen, skipping 1 frame");
+          }
+
 
         }
 

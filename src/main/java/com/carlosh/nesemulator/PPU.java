@@ -101,7 +101,7 @@ public class PPU {
 
   public int oamAddress = 0x00;
 
-  public int cpuRead(int address, boolean readOnly) {
+  public int cpuRead(int address) {
     if (CPU.instance.enableLogs) {
       CPU.log("CPU read: " + address + "\n");
     }
@@ -256,6 +256,7 @@ public class PPU {
         return nameTable[bit][address & 0x03FF];
       }
 
+      // Single-screen mirroring
       else if (rom.getMirror() == MirroringMode.ONESCREENLOW) {
         return nameTable[0][address & 0x03FF];
       }

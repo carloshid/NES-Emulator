@@ -1,21 +1,14 @@
 package com.carlosh.nesemulator.mappers;
 
 import com.carlosh.nesemulator.ROM;
-import java.util.ArrayList;
-import java.util.Arrays;
 
 /**
  * Mapper 000: NROM.
  */
 public class Mapper000 implements Mapper {
-
-  private int prgBanks;
-  private int chrBanks;
   private ROM rom;
 
-  public Mapper000(int prgBanks, int chrBanks, ROM rom) {
-    this.prgBanks = prgBanks;
-    this.chrBanks = chrBanks;
+  public Mapper000(ROM rom) {
     this.rom = rom;
     int[] temp = new int[65536];
     System.arraycopy(rom.prgROM, 0, temp, 0x8000, rom.prgROM.length);
