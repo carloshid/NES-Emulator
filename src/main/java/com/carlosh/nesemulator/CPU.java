@@ -1085,6 +1085,12 @@ public class CPU {
     return 0;
   }
 
+  private int SLO() {
+    ASL();
+    ORA();
+    return 0;
+  }
+
   /**
    * Illegal opcodes. Do nothing.
    *
@@ -1295,11 +1301,11 @@ public class CPU {
     lookup[0x00] = new Instruction("BRK", this::BRK, this::IMM, 7, "IMM");
     lookup[0x01] = new Instruction("ORA", this::ORA, this::IZX, 6, "IZX");
     lookup[0x02] = new Instruction("XXX", this::XXX, this::IMP, 2, "IMP");
-    lookup[0x03] = new Instruction("XXX", this::XXX, this::IMP, 8, "IMP");
+    lookup[0x03] = new Instruction("SLO", this::SLO, this::IZX, 8, "IZX");
     lookup[0x04] = new Instruction("XXX", this::NOP, this::ZP0, 3, "ZP0");
     lookup[0x05] = new Instruction("ORA", this::ORA, this::ZP0, 3, "ZP0");
     lookup[0x06] = new Instruction("ASL", this::ASL, this::ZP0, 5, "ZP0");
-    lookup[0x07] = new Instruction("XXX", this::XXX, this::IMP, 5, "IMP");
+    lookup[0x07] = new Instruction("SLO", this::SLO, this::ZP0, 5, "ZP0");
     lookup[0x08] = new Instruction("PHP", this::PHP, this::IMP, 3, "IMP");
     lookup[0x09] = new Instruction("ORA", this::ORA, this::IMM, 2, "IMM");
     lookup[0x0A] = new Instruction("ASL", this::ASL, this::IMP, 2, "IMP");
@@ -1307,24 +1313,24 @@ public class CPU {
     lookup[0x0C] = new Instruction("XXX", this::NOP, this::ABS, 4, "ABS");
     lookup[0x0D] = new Instruction("ORA", this::ORA, this::ABS, 4, "ABS");
     lookup[0x0E] = new Instruction("ASL", this::ASL, this::ABS, 6, "ABS");
-    lookup[0x0F] = new Instruction("XXX", this::XXX, this::IMP, 6, "IMP");
+    lookup[0x0F] = new Instruction("SLO", this::SLO, this::ABS, 6, "ABS");
 
     lookup[0x10] = new Instruction("BPL", this::BPL, this::REL, 2, "REL");
     lookup[0x11] = new Instruction("ORA", this::ORA, this::IZY, 5, "IZY");
     lookup[0x12] = new Instruction("XXX", this::XXX, this::IMP, 2, "IMP");
-    lookup[0x13] = new Instruction("XXX", this::XXX, this::IMP, 8, "IMP");
+    lookup[0x13] = new Instruction("SLO", this::SLO, this::IZY, 8, "IZY");
     lookup[0x14] = new Instruction("XXX", this::NOP, this::ZPX, 4, "ZPX");
     lookup[0x15] = new Instruction("ORA", this::ORA, this::ZPX, 4, "ZPX");
     lookup[0x16] = new Instruction("ASL", this::ASL, this::ZPX, 6, "ZPX");
-    lookup[0x17] = new Instruction("XXX", this::XXX, this::IMP, 6, "IMP");
+    lookup[0x17] = new Instruction("SLO", this::SLO, this::ZPX, 6, "ZPX");
     lookup[0x18] = new Instruction("CLC", this::CLC, this::IMP, 2, "IMP");
     lookup[0x19] = new Instruction("ORA", this::ORA, this::ABY, 4, "ABY");
     lookup[0x1A] = new Instruction("XXX", this::NOP, this::IMP, 2, "IMP");
-    lookup[0x1B] = new Instruction("XXX", this::XXX, this::IMP, 7, "IMP");
+    lookup[0x1B] = new Instruction("SLO", this::SLO, this::ABY, 7, "ABY");
     lookup[0x1C] = new Instruction("XXX", this::NOP, this::ABX, 4, "ABX");
     lookup[0x1D] = new Instruction("ORA", this::ORA, this::ABX, 4, "ABX");
     lookup[0x1E] = new Instruction("ASL", this::ASL, this::ABX, 7, "ABX");
-    lookup[0x1F] = new Instruction("XXX", this::XXX, this::IMP, 7, "IMP");
+    lookup[0x1F] = new Instruction("SLO", this::SLO, this::ABX, 7, "ABX");
 
     lookup[0x20] = new Instruction("JSR", this::JSR, this::ABS, 6, "ABS");
     lookup[0x21] = new Instruction("AND", this::AND, this::IZX, 6, "IZX");
