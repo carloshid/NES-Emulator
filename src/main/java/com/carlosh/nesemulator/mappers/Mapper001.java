@@ -1,146 +1,151 @@
-//package com.carlosh.nesemulator.mappers;
-//
-///**
-// * TODO : Mapper 001: MMC1.
-// */
-//public class Mapper001 implements Mapper {
-//
-//  private int prgBanks;
-//  private int chrBanks;
-//  private int[] RAM = new int[32768];
-//  private int controlRegister;
-//  private int loadRegister;
-//  private int loadCount;
-//  private int CHR_Bank_4KB_Low;
-//  private int CHR_Bank_4KB_High;
-//  private int CHR_Bank_8KB;
-//  private int PRG_Bank_16KB_Low;
-//  private int PRG_Bank_16KB_High;
-//  private int PRG_Bank_32KB;
-//  private MirroringMode mirroringMode;
-//
-//
-//
-//  public Mapper001(int prgBanks, int chrBanks) {
-//    this.prgBanks = prgBanks;
-//    this.chrBanks = chrBanks;
-//  }
-//
-//  @Override
-//  public int[] cpuRead(int address) {
-//    if (address >= 0x6000 && address <= 0x7FFF) {
-//      int mappedData = RAM[address & 0x1FFF];
-//
-//      return new int[] { -1, mappedData };
-//
-//    } else if (address >= 0x8000) {
-//      int mappedAddress;
-//      if ((controlRegister & 0b010000) != 0 && address <= 0xBFFF) {
-//        mappedAddress = (PRG_Bank_16KB_Low * 16384) + (address & 0x3FFF);
-//      } else if ((controlRegister & 0b010000) != 0 && address <= 0xFFFF) {
-//        mappedAddress = (PRG_Bank_16KB_High * 16384) + (address & 0x3FFF);
-//      } else {
-//        mappedAddress = (PRG_Bank_32KB * 32768) + (address & 0x7FFF);
-//      }
-//      return new int[] { mappedAddress, 0 };
-//    }
-//
-//    return new int[] {-2, 0};
-//  }
-//
-//  @Override
-//  public int cpuWrite(int address, int data) {
-//    if (address >= 0x6000 && address <= 0x7FFF) {
-//      RAM[address & 0x1FFF] = data;
-//      return -1;
-//
-//    } else if (address >= 0x8000) {
-//      if ((data & 0x80) != 0) {
-//        loadRegister = 0;
-//        loadCount = 0;
-//        controlRegister |= 0x0C;
-//
-//      } else {
-//        loadRegister >>= 1;
-//        loadRegister |= (data & 0x01) << 4;
-//        loadCount++;
-//
-//        if (loadCount == 5) {
-//          int targetRegister = (address >> 13) & 0x03;
-//
-//          switch (targetRegister) {
-//            case 0:
-//              controlRegister = loadRegister & 0x1F;
-//
-//              int i = controlRegister & 0x03;
-//              mirroringMode = MirroringMode.values()[i];
-//              break;
-//            case 1:
-//              if ((controlRegister & 0b10000) != 0) {
-//                CHR_Bank_4KB_Low = loadRegister & 0x1F;
-//              } else {
-//                CHR_Bank_8KB = loadRegister & 0x1E;
-//              }
-//              break;
-//            case 2:
-//              if ((controlRegister & 0b10000) != 0) {
-//                CHR_Bank_4KB_High = loadRegister & 0x1F;
-//              }
-//              break;
-//            case 3:
-//              int j = (controlRegister >> 2) & 0x03;
-//
-//              if (j < 2) {
-//                PRG_Bank_32KB = (loadRegister & 0x0E) >> 1;
-//              } else if (j == 2) {
-//                PRG_Bank_16KB_Low = 0;
-//                PRG_Bank_16KB_High = loadRegister & 0x0F;
-//              } else {
-//                PRG_Bank_16KB_Low = loadRegister & 0x0F;
-//                PRG_Bank_16KB_High = prgBanks - 1;
-//              }
-//              break;
-//          }
-//
-//          loadRegister = 0;
-//          loadCount = 0;
-//        }
-//      }
-//
-//    }
-//
-//    return -2;
-//  }
-//
-//  @Override
-//  public int ppuRead(int address) {
-//    if (address < 0x2000 && chrBanks ==0) {
-//      return address;
-//    } else if (address < 0x2000) {
-//      int mappedAddress;
-//      if ((controlRegister & 0b10000) != 0) {
-//        if (address <= 0x0FFF) {
-//          mappedAddress = (CHR_Bank_4KB_Low * 4096) + (address & 0x0FFF);
-//        } else {
-//          mappedAddress = (CHR_Bank_4KB_High * 4096) + (address & 0x0FFF);
-//        }
-//      } else {
-//        mappedAddress = (CHR_Bank_8KB * 8192) + (address & 0x1FFF);
-//      }
-//      return mappedAddress;
-//    }
-//    return -2;
-//  }
-//
-//  @Override
-//  public int ppuWrite(int address) {
-//    if (address < 0x2000 && chrBanks == 0) return address;
-//    else if (address < 0x2000) return 0;
-//    else return -2;
-//  }
-//
-//  @Override
-//  public MirroringMode getMirroringMode() {
-//    return mirroringMode;
-//  }
-//}
+package com.carlosh.nesemulator.mappers;
+
+import com.carlosh.nesemulator.ROM;
+
+/**
+ * Mapper 001: MMC1.
+ */
+public class Mapper001 implements Mapper {
+
+  private MirroringMode mirroringMode;
+
+  private int shiftRegister = 0;
+  private int controlRegister = 0xc;
+  private int chrBank0 = 0;
+  private int chrBank1 = 0;
+  private int prgBank = 0;
+  private int counter = 0;
+  private boolean boolSOROM = false;
+  private ROM rom;
+
+
+  public Mapper001(ROM rom) {
+    this.rom = rom;
+    for (int i = 0; i < 32; i++) {
+      rom.prgMap[i] = (1024 * i) & (rom.prgSize - 1);
+    }
+    for (int i = 0; i < 8; i++) {
+      rom.chrMap[i] = (1024 * i) & (rom.chrSize - 1);
+    }
+  }
+
+  @Override
+  public int cpuRead(int address) {
+    return -2;
+  }
+
+  @Override
+  public int cpuWrite(int addr, int data) {
+    if (addr >= 0x8000 && addr <= 0xFFFF) {
+
+      if ((data & 0x80) != 0) {
+        reset();
+        return 0;
+      }
+
+      // Update shift register
+      shiftRegister = (shiftRegister >> 1) + (data & 1) * 16;
+      if (++counter < 5) return 0;
+
+      if (addr < 0xA000) {
+        // Update control register
+        controlRegister = shiftRegister & 0x1F;
+        mirroringMode = MirroringMode.values()[controlRegister & 3];
+      } else if (addr < 0xC000) {
+        // Update CHR bank 0
+        chrBank0 = shiftRegister & 0x1F;
+        if (rom.prgSize > 256 * 1024) {
+          chrBank0 &= 0x0F;
+          boolSOROM = (shiftRegister & 0x10) != 0;
+        }
+      } else if (addr < 0xE000) {
+        // Update CHR bank 1
+        chrBank1 = shiftRegister & 0x1F;
+        if (rom.prgSize > 256 * 1024) chrBank1 &= 0x0F;
+      } else {
+        // Update PRG bank
+        prgBank = shiftRegister & 0x0F;
+      }
+
+      updateChrBanks();
+      updatePrgBank();
+      counter = 0;
+      shiftRegister = 0;
+      return 0;
+    }
+
+    return -2;
+  }
+
+  @Override
+  public int ppuRead(int address) {
+    return -2;
+  }
+
+  @Override
+  public int ppuWrite(int address) {
+    return -2;
+  }
+
+  @Override
+  public MirroringMode getMirroringMode() {
+    return mirroringMode;
+  }
+
+  private void updateChrBanks() {
+    if ((controlRegister & 0x10) == 0) {
+      // 8 KB CHR bank, low bit ignored
+      for (int i = 0; i < 8; i++) {
+        rom.chrMap[i] = (((chrBank0 / 2) * 8 + i) * 1024) % rom.chrSize;
+      }
+    } else {
+      // 4 KB CHR banks
+      for (int i = 0; i < 4; i++) {
+        rom.chrMap[i] = ((chrBank0 * 4 + i) * 1024) % rom.chrSize;
+      }
+      for (int i = 0; i < 4; i++) {
+        rom.chrMap[i + 4] = ((chrBank1 * 4 + i) * 1024) % rom.chrSize;
+      }
+    }
+  }
+
+  private void updatePrgBank() {
+    if ((controlRegister & 0x08) == 0) {
+      // 32 KB mode, low bit ignored
+      for (int i = 0; i < 32; i++) {
+        rom.prgMap[i] = (((prgBank / 2) * 0x8000) + i * 1024) % rom.prgSize;
+      }
+
+    } else if ((controlRegister & 0x04) == 0) {
+      for (int i = 0; i < 16; i++) {
+        rom.prgMap[i] = (1024 * i);
+      }
+      for (int i = 0; i < 16; i++) {
+        rom.prgMap[i + 16] = (prgBank * 0x4000 + i * 1024) % rom.prgSize;
+      }
+
+    } else {
+      for (int i = 0; i < 16; i++) {
+        rom.prgMap[i] = (prgBank * 0x4000 + i * 1024) % rom.prgSize;
+      }
+      for (int i = 1; i <= 16; i++) {
+        int j = rom.prgSize - (1024 * i);
+        rom.prgMap[32 - i] = j > 0x40000 ? j - 0x40000 : j;
+      }
+    }
+
+    if (boolSOROM && (rom.prgSize > 0x40000)) {
+      for (int i = 0; i < rom.prgMap.length; i++) {
+        rom.prgMap[i] += 0x40000;
+      }
+    }
+  }
+
+  private void reset() {
+    shiftRegister = 0;
+    counter = 0;
+    controlRegister |= 0xc;
+    updateChrBanks();
+    updatePrgBank();
+  }
+}

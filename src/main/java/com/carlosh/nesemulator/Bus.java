@@ -9,7 +9,7 @@ public class Bus {
   private PPU ppu;
   private CPU cpu;
   private ROM rom;
-  private long clockCounter = 0;
+  public long clockCounter = 0;
   public int[] controller = new int[2];
   private int[] controllerState = new int[2];
   int[] ram = new int[2048];
@@ -38,11 +38,11 @@ public class Bus {
     }
   }
 
-  public int read(int address, boolean readOnly) {
+  public int read(int address) {
     int data = -3;
 
     if (address >= 0x4019) {
-      return rom.cpuRead(address, readOnly);
+      return rom.cpuRead(address);
     }
 
 //    int romData = rom.cpuRead(address, readOnly);
@@ -53,7 +53,7 @@ public class Bus {
       data = ram[address & 0x07FF];
       return data;
     } else if (address >= 0x2000 && address <= 0x3FFF) {
-      data = ppu.cpuRead(address & 0x0007, readOnly);
+      data = ppu.cpuRead(address & 0x0007);
       return data;
     } else if (address >= 0x4016 && address <= 0x4017) {
       data = (controllerState[address & 0x0001] & 0x80) > 0 ? 1 : 0;
@@ -119,7 +119,7 @@ public class Bus {
             dmaWaiting = true;
           }
         } else {
-          directAddressData = read(directAddress, false);
+          directAddressData = read(directAddress);
         }
       }
     }
