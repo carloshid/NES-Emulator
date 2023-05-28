@@ -22,10 +22,10 @@
  * Mapper 1 (MMC1) : The Legend of Zelda, Castlevania 2, Tetris
  * Mapper 2 (UNROM) : Castlevania, Contra, Mega Man
  * Mapper 3 (CNROM) : Arkanoid, Solomon's Key
+ * Mapper 4 (MMC3) : Super Mario Bros 3
  * Mapper 7 (AxROM) : Battletoads (Contains visual glitches), Wizards & Warriors
 
 ## To do:
-* Mappers 4 and 5
 * Add sounds
 * Additional mappers later
 
