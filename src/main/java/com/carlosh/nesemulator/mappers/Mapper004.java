@@ -1,5 +1,6 @@
 package com.carlosh.nesemulator.mappers;
 
+import com.carlosh.nesemulator.CPU;
 import com.carlosh.nesemulator.ROM;
 import java.util.Arrays;
 
@@ -13,7 +14,13 @@ public class Mapper004 implements Mapper {
   private boolean bit6 = false; // Bit 6 of the last value written to $8000
   private boolean bit7 = false; // Bit 7 of the last value written to $8000
   private int[] bankSelect = new int[8];
-  protected int currentBankN = 0;
+  private int currentBankN = 0;
+
+  private int irqCounterReload = 0;
+  private int irqCounter = 0;
+  private boolean irqEnable = false;
+  private boolean irqReload = false;
+  private boolean interrupted = false;
 
   public Mapper004(ROM rom) {
     this.rom = rom;
@@ -94,6 +101,12 @@ public class Mapper004 implements Mapper {
             }
           }
         }
+
+        else if (address >= 0xC000 && address <= 0xDFFF) {
+          irqReload = true;
+        } else if (address >= 0xE000) {
+          irqEnable = true;
+        }
       }
 
       else {
@@ -106,6 +119,16 @@ public class Mapper004 implements Mapper {
           mapPrgBanks();
         } else if (address <= 0xBFFF) {
           mirroringMode = (data & 1) != 0 ? MirroringMode.HORIZONTAL : MirroringMode.VERTICAL;
+        }
+
+        else if (address <= 0xDFFF) {
+          irqCounterReload = data;
+        } else {
+          if (interrupted) {
+            --irqCounter;
+          }
+          interrupted = false;
+          irqEnable = false;
         }
       }
 
@@ -123,6 +146,32 @@ public class Mapper004 implements Mapper {
   @Override
   public int ppuWrite(int address) {
     return -2;
+  }
+
+  @Override
+  public void clockScanCounter() {
+    if (irqCounter == 0 || irqReload) {
+      irqCounter = irqCounterReload;
+      irqReload = false;
+    }
+    else {
+      --irqCounter;
+    }
+    if (irqCounter == 0 && irqEnable) {
+      irq = true;
+    }
+  }
+
+  private boolean irq = false;
+
+  @Override
+  public void setIrq(boolean state) {
+    irq = state;
+  }
+
+  @Override
+  public boolean getIrq() {
+    return irq;
   }
 
   @Override
