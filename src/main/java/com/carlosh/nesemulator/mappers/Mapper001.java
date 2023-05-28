@@ -35,8 +35,8 @@ public class Mapper001 implements Mapper {
   }
 
   @Override
-  public int cpuWrite(int addr, int data) {
-    if (addr >= 0x8000 && addr <= 0xFFFF) {
+  public int cpuWrite(int address, int data) {
+    if (address >= 0x8000 && address <= 0xFFFF) {
 
       if ((data & 0x80) != 0) {
         reset();
@@ -47,18 +47,18 @@ public class Mapper001 implements Mapper {
       shiftRegister = (shiftRegister >> 1) + (data & 1) * 16;
       if (++counter < 5) return 0;
 
-      if (addr < 0xA000) {
+      if (address < 0xA000) {
         // Update control register
         controlRegister = shiftRegister & 0x1F;
         mirroringMode = MirroringMode.values()[controlRegister & 3];
-      } else if (addr < 0xC000) {
+      } else if (address < 0xC000) {
         // Update CHR bank 0
         chrBank0 = shiftRegister & 0x1F;
         if (rom.prgSize > 256 * 1024) {
           chrBank0 &= 0x0F;
           boolSOROM = (shiftRegister & 0x10) != 0;
         }
-      } else if (addr < 0xE000) {
+      } else if (address < 0xE000) {
         // Update CHR bank 1
         chrBank1 = shiftRegister & 0x1F;
         if (rom.prgSize > 256 * 1024) chrBank1 &= 0x0F;
