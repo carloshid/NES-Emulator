@@ -5,22 +5,18 @@ import com.carlosh.nesemulator.mappers.Mapper000;
 import com.carlosh.nesemulator.mappers.Mapper001;
 import com.carlosh.nesemulator.mappers.Mapper002;
 import com.carlosh.nesemulator.mappers.Mapper003;
+import com.carlosh.nesemulator.mappers.Mapper004;
 import com.carlosh.nesemulator.mappers.Mapper007;
 import com.carlosh.nesemulator.mappers.MirroringMode;
 import java.io.File;
 import java.io.FileInputStream;
-import java.nio.file.NoSuchFileException;
-import java.util.ArrayList;
-import java.util.List;
 
 public class ROM {
   private int[] romBytes;
   private String filename;
 
-  //public List<Integer> prgROM = new ArrayList<>();
   public int[] prgROM;
   private int extraAddress = 0;
-  //public List<Integer> chrROM = new ArrayList<>();
   public int[] chrROM;
   private ROM_Header header;
   private Mapper mapper;
@@ -164,6 +160,10 @@ public class ROM {
       }
       case 3: {
         mapper = new Mapper003(this);
+        break;
+      }
+      case 4: {
+        mapper = new Mapper004(this);
         break;
       }
       case 7: {
