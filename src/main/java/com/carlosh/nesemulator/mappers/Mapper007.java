@@ -58,4 +58,19 @@ public class Mapper007 implements Mapper {
     return mirror;
   }
 
+  @Override
+  public void clockScanCounter() {
+
+  }
+
+  @Override
+  public void setIrq(boolean state) {
+
+  }
+
+  @Override
+  public boolean getIrq() {
+    return false;
+  }
+
 }

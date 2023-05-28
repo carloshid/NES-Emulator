@@ -16,4 +16,8 @@ public interface Mapper {
   int ppuRead(int address);
   int ppuWrite(int address);
   MirroringMode getMirroringMode();
+
+  void clockScanCounter();
+  void setIrq(boolean state);
+  boolean getIrq();
 }

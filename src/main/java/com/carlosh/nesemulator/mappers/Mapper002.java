@@ -55,4 +55,19 @@ public class Mapper002 implements Mapper {
   public MirroringMode getMirroringMode() {
     return MirroringMode.HARDWARE;
   }
+
+  @Override
+  public void clockScanCounter() {
+
+  }
+
+  @Override
+  public void setIrq(boolean state) {
+
+  }
+
+  @Override
+  public boolean getIrq() {
+    return false;
+  }
 }

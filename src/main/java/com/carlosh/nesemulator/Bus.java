@@ -1,6 +1,5 @@
 package com.carlosh.nesemulator;
 
-import com.carlosh.nesemulator.ui.ScreenNES;
 import java.util.Arrays;
 
 public class Bus {
@@ -22,10 +21,6 @@ public class Bus {
     if (address >= 0x4019) {
       rom.cpuWrite(address, data);
     }
-
-//    if (rom.cpuWrite(address, data)) {
-//      return;
-//    }
     else if (address >= 0x0000 && address <= 0x1FFF) {
       ram[address & 0x07FF] = data;
     } else if (address >= 0x2000 && address <= 0x3FFF) {
@@ -40,15 +35,9 @@ public class Bus {
 
   public int read(int address) {
     int data = -3;
-
     if (address >= 0x4019) {
       return rom.cpuRead(address);
     }
-
-//    int romData = rom.cpuRead(address, readOnly);
-//    if (romData != -2) {
-//      return romData;
-//    }
     else if (address >= 0x0000 && address <= 0x1FFF) {
       data = ram[address & 0x07FF];
       return data;
@@ -127,6 +116,11 @@ public class Bus {
     if (ppu.getNonMaskableInterrupt()) {
       ppu.setNonMaskableInterrupt(false);
       cpu.nonMaskableInterruptRequest();
+    }
+
+    if (rom.getMapper().getIrq()) {
+      rom.getMapper().setIrq(false);
+      cpu.interruptRequest();
     }
 
     clockCounter++;

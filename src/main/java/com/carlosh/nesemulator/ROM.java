@@ -21,6 +21,10 @@ public class ROM {
   private ROM_Header header;
   private Mapper mapper;
 
+  public Mapper getMapper() {
+    return mapper;
+  }
+
   public int[] prgMap;
   public int[] chrMap;
 

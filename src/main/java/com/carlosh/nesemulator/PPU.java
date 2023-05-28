@@ -143,7 +143,7 @@ public class PPU {
       case 0x0007: {
         // PPU Data
         data = buffer;
-        buffer = ppuRead(vramAddress.value, false);
+        buffer = ppuRead(vramAddress.value);
         if (vramAddress.value >= 0x3F00) {
           data = buffer;
         }
@@ -224,12 +224,16 @@ public class PPU {
         } else {
           vramAddress.value += 32;
         }
+        if (vramAddress.value > 0xFFFF) {
+          vramAddress.value = vramAddress.value & 0xFFFF;
+        }
+
         break;
       }
     }
   }
 
-  public int ppuRead(int address, boolean readOnly) {
+  public int ppuRead(int address) {
     if (CPU.instance.enableLogs) {
       CPU.log("PPU read: " + address + "\n");
     }
@@ -350,7 +354,7 @@ public class PPU {
       CPU.log("PPU clock with X: " + currentX + " and Y: " + currentY + "\n");
     }
     if (currentY >= -1 && currentY < 240) {
-      if (currentY == 0 && currentX == 0) {
+      if (currentY == 0 && currentX == 0 && oddFrame && ((mask.getShowBackground() + mask.getShowSprites()) != 0)) {
         currentX = 1;
       }
 
@@ -379,7 +383,7 @@ public class PPU {
       }
 
       if (currentX == 338 || currentX == 340) {
-        bgNextTileId = ppuRead(0x2000 | (vramAddress.value & 0x0FFF), false);
+        bgNextTileId = ppuRead(0x2000 | (vramAddress.value & 0x0FFF));
       }
 
       if (currentY == -1 && currentX >= 280 && currentX < 305) {
@@ -451,8 +455,8 @@ public class PPU {
 
           assert addressLow != -1;
           // Get the low and high bytes of the sprite pattern
-          int spritePatternLow = ppuRead(addressLow, false);
-          int spritePatternHigh = ppuRead(addressLow + 8, false);
+          int spritePatternLow = ppuRead(addressLow);
+          int spritePatternHigh = ppuRead(addressLow + 8);
 
           if ((secondaryOam[i].attributes & 0x40) != 0) {
             // Horizontal flip
@@ -492,7 +496,7 @@ public class PPU {
     int spritePal = 0;
     int spritePriority = 0;
 
-    if (mask.getShowSprites() == 1) {
+    if (mask.getShowSprites() == 1 && (mask.getShowLeftSprites() == 1 || currentX >= 9)) {
       renderingSpriteZero = false;
       for (int i = 0; i < spritesN; i++) {
         if (secondaryOam[i].getX() == 0) {
@@ -548,23 +552,25 @@ public class PPU {
     drawPixel(currentX - 1, currentY, color);
 
     currentX++;
+
+    if ((mask.getShowBackground() + mask.getShowLeftSprites()) != 0) {
+      if (currentX == 260 && currentY < 240) {
+        rom.getMapper().clockScanCounter();
+      }
+    }
+
     if (currentX >= 341) {
       currentX = 0;
       currentY++;
       if (currentY >= 261) {
         currentY = -1;
-        //ScreenNES.getInstance().updateScreen(pixels);
         ready = true;
-//        try {
-//          //System.out.println(++count);
-//          sleep(17);
-//        } catch (InterruptedException e) {
-//          throw new RuntimeException(e);
-//        }
+        oddFrame = !oddFrame;
       }
     }
-
   }
+
+  private boolean oddFrame;
 
 
   private void drawPixel(int x, int y, int color) {
@@ -597,8 +603,8 @@ public class PPU {
 
         for (int row = 0; row < 8; row++) {
           base = i * 0x1000 + offset + row;
-          lsb = ppuRead(base, false);
-          msb = ppuRead(base + 0x0008, false);
+          lsb = ppuRead(base);
+          msb = ppuRead(base + 0x0008);
 
           for (int col = 0; col < 8; col++) {
             int pixel = (msb & 0x01) << 1 | (lsb & 0x01);
@@ -626,7 +632,7 @@ public class PPU {
 
   private int getPaletteColor(int palette, int pixel) {
     //System.out.println(palette + " " + pixel);
-    int val = ppuRead(0x3F00 + palette * 4 + pixel, false);
+    int val = ppuRead(0x3F00 + palette * 4 + pixel);
     return colorPalette[val & 0x3F];
   }
 
@@ -1011,11 +1017,11 @@ public class PPU {
     CPU.log("Preparing background for step: " + step + "\n");
     if (step == 0) {
       loadBackgroundShifters();
-      bgNextTileId = ppuRead(0x2000 | (vramAddress.value & 0x0FFF), false);
+      bgNextTileId = ppuRead(0x2000 | (vramAddress.value & 0x0FFF));
     } else if (step == 2) {
       bgNextTileAttrib = ppuRead(0x23C0 | (vramAddress.getNametableY() << 11)
           | (vramAddress.getNametableX() << 10) | ((vramAddress.getCoarseY() >> 2) << 3)
-          | (vramAddress.getCoarseX() >> 2), false);
+          | (vramAddress.getCoarseX() >> 2));
       if ((vramAddress.getCoarseY() & 0x02) != 0) {
         bgNextTileAttrib >>= 4;
       }
@@ -1025,10 +1031,10 @@ public class PPU {
       bgNextTileAttrib &= 0x03;
     } else if (step == 4) {
       bgNextTileLsb = ppuRead((control.getPatternBackground() << 12)
-          + (bgNextTileId << 4) + vramAddress.getFineY(), false);
+          + (bgNextTileId << 4) + vramAddress.getFineY());
     } else if (step == 6) {
       bgNextTileMsb = ppuRead((control.getPatternBackground() << 12)
-          + (bgNextTileId << 4) + vramAddress.getFineY() + 8, false);
+          + (bgNextTileId << 4) + vramAddress.getFineY() + 8);
     } else if (step == 7) {
       incrementX();
     }

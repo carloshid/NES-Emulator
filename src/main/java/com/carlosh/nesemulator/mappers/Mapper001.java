@@ -92,6 +92,21 @@ public class Mapper001 implements Mapper {
     return mirroringMode;
   }
 
+  @Override
+  public void clockScanCounter() {
+
+  }
+
+  @Override
+  public void setIrq(boolean state) {
+
+  }
+
+  @Override
+  public boolean getIrq() {
+    return false;
+  }
+
   private void updateChrBanks() {
     if ((controlRegister & 0x10) == 0) {
       // 8 KB CHR bank, low bit ignored
