@@ -1,22 +1,17 @@
 package com.carlosh.nesemulator;
 
-import com.carlosh.nesemulator.mappers.Mapper;
-import com.carlosh.nesemulator.mappers.Mapper000;
-import com.carlosh.nesemulator.mappers.Mapper001;
-import com.carlosh.nesemulator.mappers.Mapper002;
-import com.carlosh.nesemulator.mappers.Mapper003;
-import com.carlosh.nesemulator.mappers.Mapper004;
-import com.carlosh.nesemulator.mappers.Mapper007;
-import com.carlosh.nesemulator.mappers.MirroringMode;
+import com.carlosh.nesemulator.mappers.*;
 import java.io.File;
 import java.io.FileInputStream;
 
+/**
+ * Class to load a ROM file and interact with the emulation as if it was an inserted NES cartridge.
+ */
 public class ROM {
-  private int[] romBytes;
-  private String filename;
+  private final int[] romBytes;
+  private final String filename;
 
   public int[] prgROM;
-  private int extraAddress = 0;
   public int[] chrROM;
   private ROM_Header header;
   private Mapper mapper;
@@ -35,11 +30,9 @@ public class ROM {
   private int mapperID = 0;
   private int prgBanks = 0;
   private int chrBanks = 0;
-
   public int prgSize = 0;
   public int chrSize = 0;
 
-  private boolean valid = false;
   private MirroringMode mirror = MirroringMode.HORIZONTAL;
 
   private class ROM_Header {
@@ -56,12 +49,8 @@ public class ROM {
 
   public ROM(String filename) {
     this.header = new ROM_Header();
-    valid = false;
-
     romBytes = readFile(filename);
-
     this.filename = filename;
-
     header = loadHeader(romBytes);
 
     int start = 16;
@@ -69,11 +58,9 @@ public class ROM {
       start = 512;
     }
 
-
     // Mapper id and mirror
     mapperID = ((header.mapper2 >> 4) << 4) | (header.mapper1 >> 4);
     mirror = (header.mapper1 & 0x01) != 0 ? MirroringMode.VERTICAL : MirroringMode.HORIZONTAL;
-
 
     // File type
     int fileType = (header.mapper2 & 0x0C) == 0x08 ? 2 : 1;
@@ -83,52 +70,39 @@ public class ROM {
     if (fileType == 1) {
       prgBanks = header.prgROMSize;
       prgSize = prgBanks * 16384;
-
       prgROM = new int[prgSize];
-
       for (int i = start; i < start + prgBanks * 16384; i++) {
-        //prgROM.add(romBytes[i]);
         prgROM[i - start] = romBytes[i];
       }
 
       chrBanks = header.chrROMSize;
       chrSize = chrBanks * 8192;
-
       chrROM = new int[chrSize];
 
       start = start + prgBanks * 16384;
       int end = start + Math.min(chrBanks * 8192, 8192);
       for (int i = start; i < end; i++) {
-        //chrROM.add(romBytes[i]);
         chrROM[i - start] = romBytes[i];
       }
 
     } else if (fileType == 2) {
       prgBanks = ((header.prgRAMSize & 0x07) << 8) | header.prgROMSize;
       prgSize = prgBanks * 16384;
-
       prgROM = new int[prgSize];
-
       for (int i = start; i < start + prgBanks * 16384; i++) {
-        //prgROM.add(romBytes[i]);
         prgROM[i - start] = romBytes[i];
       }
 
       chrBanks = (((header.prgRAMSize & 0x38) << 8) & 0xFF) | header.chrROMSize;
       int a = 8192 * (header.chrROMSize + ((header.tvSystem1 >> 4) << 8));
       chrSize = Math.min(romBytes.length - 16 - prgROM.length, a);
-
       chrROM = new int[chrSize];
-
       start = start + prgBanks * 16384;
       //int end = start + chrBanks * 8192;
       int end = start + chrSize;
-
       for (int i = start; i < end; i++) {
-        //chrROM.add(romBytes[i]);
         chrROM[i - start] = romBytes[i];
       }
-
     }
 
     if (chrSize == 0) {
@@ -139,44 +113,24 @@ public class ROM {
 
     prgMap = new int[32];
     for (int i = 0; i < 32; i++) {
-      prgMap[i] = (1024 * i) & ((prgBanks * 16384) - 1);
+      prgMap[i] = (1024 * i) & (prgSize - 1);
     }
     chrMap = new int[8];
     for (int i = 0; i < 8; i++) {
-      chrMap[i] = (1024 * i) & ((chrSize) - 1);
+      chrMap[i] = (1024 * i) & (chrSize - 1);
     }
 
     System.out.println("Mapper: " + mapperID);
 
     // Load mapper
     switch (mapperID) {
-      case 0: {
-        mapper = new Mapper000(this);
-        break;
-      }
-      case 1: {
-        mapper = new Mapper001(this);
-        break;
-      }
-      case 2: {
-        mapper = new Mapper002(this);
-        break;
-      }
-      case 3: {
-        mapper = new Mapper003(this);
-        break;
-      }
-      case 4: {
-        mapper = new Mapper004(this);
-        break;
-      }
-      case 7: {
-        mapper = new Mapper007(this);
-        break;
-      }
+      case 0 -> mapper = new Mapper000(this);
+      case 1 -> mapper = new Mapper001(this);
+      case 2 -> mapper = new Mapper002(this);
+      case 3 -> mapper = new Mapper003(this);
+      case 4 -> mapper = new Mapper004(this);
+      case 7 -> mapper = new Mapper007(this);
     }
-
-    valid = true;
   }
 
   public int cpuRead(int address) {
@@ -228,7 +182,7 @@ public class ROM {
   }
 
   public boolean ppuWrite(int address, int data) {
-    int mappedAddress = mapper.ppuWrite(address);
+    int mappedAddress = mapper.ppuWrite(address, data);
     if (mappedAddress != -2) {
       return true;
     }
@@ -291,6 +245,5 @@ public class ROM {
     if (mode == MirroringMode.HARDWARE) return mirror;
     else return mode;
   }
-
 
 }

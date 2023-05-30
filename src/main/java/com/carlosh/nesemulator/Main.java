@@ -5,31 +5,23 @@ import static java.lang.Thread.sleep;
 import com.carlosh.nesemulator.ui.ConfigOptions;
 import com.carlosh.nesemulator.ui.Menus;
 import com.carlosh.nesemulator.ui.ScreenNES;
-import java.io.File;
-import java.nio.file.NoSuchFileException;
-import java.util.concurrent.Callable;
 import javafx.application.Application;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
-import javafx.scene.control.MenuItem;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import javafx.stage.FileChooser;
-import javafx.stage.Screen;
 import javafx.stage.Stage;
 
+/**
+ * Main class of the application.
+ */
 public class Main extends Application {
 
   private static VBox root;
   private static boolean emulationRunning = false;
   private static Thread emulationThread;
   private static ROM rom;
-
 
   public static void main(String[] args) {
     ConfigOptions.loadConfigOptions();
@@ -45,6 +37,8 @@ public class Main extends Application {
       return;
     }
 
+    // If there was already an emulation running, stop it before starting another one from the
+    // loaded ROM.
     if (emulationRunning) {
       emulationThread.interrupt();
 
@@ -82,20 +76,22 @@ public class Main extends Application {
       @Override
       public void run() {
         long res = 0;
-        long elapsedTime, currentTime, previousElapsedTime;
+        long elapsedTime, currentTime;
         long previousTime = System.nanoTime();
 
         while (!Thread.currentThread().isInterrupted()) {
 
+          // Update the times
           currentTime = System.nanoTime();
           elapsedTime = currentTime - previousTime;
           previousTime = currentTime;
 
-          previousElapsedTime = elapsedTime;
-
+          // Update the controllers
           Bus.bus.controller[0] = KeyController.controller0.state;
           Bus.bus.controller[1] = KeyController.controller1.state;
 
+          // If it is time for the next frame, perform clock cycles until the next frame is ready
+          // and then update the screen
           if (res > 0) {
             res -= elapsedTime;
           } else {
@@ -105,15 +101,13 @@ public class Main extends Application {
               bus.clock();
             }
             PPU.instance.ready = false;
+
+            try {
+              ScreenNES.getInstance().updateScreen(PPU.instance.pixels);
+            } catch (Exception e) {
+              System.out.println("Error updating screen, skipping 1 frame");
+            }
           }
-
-
-          try {
-            ScreenNES.getInstance().updateScreen(PPU.instance.pixels);
-          } catch (Exception e) {
-            System.out.println("Error updating screen, skipping 1 frame");
-          }
-
 
         }
 

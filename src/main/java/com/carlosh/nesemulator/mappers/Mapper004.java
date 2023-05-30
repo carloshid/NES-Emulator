@@ -144,7 +144,7 @@ public class Mapper004 implements Mapper {
   }
 
   @Override
-  public int ppuWrite(int address) {
+  public int ppuWrite(int address, int data) {
     return -2;
   }
 

@@ -1,8 +1,11 @@
 package com.carlosh.nesemulator.mappers;
 
+/**
+ * NES mirroring modes.
+ */
 public enum MirroringMode {
-  ONESCREENLOW,
-  ONESCREENHIGH,
+  SINGLESCREENLOW,
+  SINGLESCREENHIGH,
   VERTICAL,
   HORIZONTAL,
   HARDWARE

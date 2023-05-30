@@ -11,14 +11,8 @@ public class Mapper002 implements Mapper {
 
   public Mapper002(ROM rom) {
     this.rom = rom;
-    for (int i = 0; i < 16; i++) {
-      rom.prgMap[i] = (1024 * i) & (rom.prgSize - 1);
-    }
     for (int i = 1; i <= 16; i++) {
       rom.prgMap[32 - i] = rom.prgSize - (1024 * i);
-    }
-    for (int i = 0; i < 8; i++) {
-      rom.chrMap[i] = (1024 * i) & (rom.chrSize - 1);
     }
   }
 
@@ -47,7 +41,7 @@ public class Mapper002 implements Mapper {
   }
 
   @Override
-  public int ppuWrite(int address) {
+  public int ppuWrite(int address, int data) {
     return -2;
   }
 

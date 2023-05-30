@@ -128,7 +128,20 @@ public class KeyController {
     }
   }
 
+  /**
+   * Updates the keybinds for the controller.
+   *
+   * @param keyCodes the new keybinds
+   */
   public void setKeyCodes(KeyCode[] keyCodes) {
+    // Ensure that there are 8 keycodes and no duplicates
+    assert keyCodes.length == 8;
+    for (int i = 0; i < keyCodes.length; i++) {
+      for (int j = i + 1; j < keyCodes.length; j++) {
+        assert keyCodes[i] != keyCodes[j];
+      }
+    }
+
     a = keyCodes[0];
     b = keyCodes[1];
     select = keyCodes[2];

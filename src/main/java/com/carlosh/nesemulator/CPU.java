@@ -1099,12 +1099,9 @@ public class CPU {
 
   /**
    * Illegal opcodes. Do nothing.
-   *
-   * @return 0
    */
   public int XXX() {
     throw new RuntimeException("Illegal opcode: " + opcode);
-    //return 0;
   }
 
 
@@ -1150,7 +1147,7 @@ public class CPU {
 
   private static String messageBuffer = ""; // Buffer for messages to write to disk
   private static int messageCount = 0; // Current amount of messages in the buffer
-  private static int countThreshhold = 10000; // Change how often to write to disk
+  private static final int countThreshhold = 10000; // Change how often to write to disk
 
   /**
    * Log a message to use for debugging. Writes them to disk to a file called output.txt.
@@ -1299,8 +1296,6 @@ public class CPU {
 
   /**
    * Initialize the lookup table for the CPU instructions.
-   *
-   * TODO : Some illegal opcodes are missing. Add them later.
    */
   private void initializeInstructions() {
     lookup[0x00] = new Instruction("BRK", this::BRK, this::IMM, 7, "IMM");

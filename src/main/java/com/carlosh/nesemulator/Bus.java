@@ -2,21 +2,31 @@ package com.carlosh.nesemulator;
 
 import java.util.Arrays;
 
+/**
+ * The bus class represents the NES system. References the different hardware components and stores
+ * the system memory.
+ */
 public class Bus {
   public static Bus bus;
 
-  private PPU ppu;
-  private CPU cpu;
+  private final PPU ppu;
+  private final CPU cpu;
   private ROM rom;
   public long clockCounter = 0;
   public int[] controller = new int[2];
-  private int[] controllerState = new int[2];
-  int[] ram = new int[2048];
+  private final int[] controllerState = new int[2];
+  private final int[] ram = new int[2048];
   private int directAddress = 0;
   private int directAddressData = 0;
-  boolean dma = false;
-  boolean dmaWaiting = true;
+  private boolean dma = false;
+  private boolean dmaWaiting = true;
 
+  /**
+   * Write some data to a specific memory address.
+   *
+   * @param address The address to write to.
+   * @param data The data to write.
+   */
   public void write (int address, int data) {
     if (address >= 0x4019) {
       rom.cpuWrite(address, data);
@@ -33,6 +43,12 @@ public class Bus {
     }
   }
 
+  /**
+   * Read the data stored at a specific memory address.
+   *
+   * @param address The address to read from.
+   * @return The data stored at the address.
+   */
   public int read(int address) {
     int data = -3;
     if (address >= 0x4019) {
@@ -52,6 +68,9 @@ public class Bus {
     return 0x00;
   }
 
+  /**
+   * Constructor for the Bus class.
+   */
   public Bus() {
     Arrays.fill(ram, 0x00);
     cpu = CPU.instance;
@@ -64,11 +83,19 @@ public class Bus {
     controllerState[1] = 0;
   }
 
+  /**
+   * Add a reference to the ROM currently loaded.
+   *
+   * @param rom The ROM to add.
+   */
   public void addROM(ROM rom) {
       this.rom = rom;
       ppu.addROM(rom);
   }
 
+  /**
+   * Reset the whole system.
+   */
   public void reset() {
     cpu.reset();
     ppu.reset();
@@ -79,6 +106,9 @@ public class Bus {
     clockCounter = 0;
   }
 
+  /**
+   * Perform one clock cycle. The CPU performs one clock cycle every 3 PPU clock cycles.
+   */
   public void clock() {
     ppu.clock();
     if (clockCounter % 3 == 0) {
@@ -125,6 +155,5 @@ public class Bus {
 
     clockCounter++;
   }
-
 
 }

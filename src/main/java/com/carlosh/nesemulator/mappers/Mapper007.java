@@ -9,16 +9,10 @@ public class Mapper007 implements Mapper {
 
   private ROM rom;
 
-  MirroringMode mirror = MirroringMode.ONESCREENHIGH;
+  MirroringMode mirror = MirroringMode.SINGLESCREENHIGH;
 
   public Mapper007(ROM rom) {
     this.rom = rom;
-    for (int i = 0; i < 32; i++) {
-      rom.prgMap[i] = (1024 * i) & (rom.prgSize - 1);
-    }
-    for (int i = 0; i < 8; i++) {
-      rom.chrMap[i] = (1024 * i) & (rom.chrSize - 1);
-    }
   }
 
   @Override
@@ -33,9 +27,9 @@ public class Mapper007 implements Mapper {
         rom.prgMap[i] = ((((data & 0x0F) * 32) + i) * 1024) & (rom.prgSize - 1);
       }
       if ((data & 0x10) != 0) {
-        mirror = MirroringMode.ONESCREENLOW;
+        mirror = MirroringMode.SINGLESCREENLOW;
       } else {
-        mirror = MirroringMode.ONESCREENHIGH;
+        mirror = MirroringMode.SINGLESCREENHIGH;
       }
 
       return 0;
@@ -49,7 +43,7 @@ public class Mapper007 implements Mapper {
   }
 
   @Override
-  public int ppuWrite(int address) {
+  public int ppuWrite(int address, int data) {
     return -2;
   }
 

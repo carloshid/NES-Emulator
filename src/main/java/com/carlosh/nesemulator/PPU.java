@@ -1,13 +1,12 @@
 package com.carlosh.nesemulator;
 
-import static java.lang.Thread.sleep;
-
 import com.carlosh.nesemulator.mappers.MirroringMode;
 import com.carlosh.nesemulator.ui.ScreenNES;
-import java.lang.reflect.Array;
 import java.util.Arrays;
-import java.util.Random;
 
+/**
+ * The PPU of the NES.
+ */
 public class PPU {
 
   /**
@@ -28,32 +27,38 @@ public class PPU {
   }
 
   private ROM rom;
-  private int[][] nameTable = new int[2][2048];
-  private int[] paletteTable = new int[32];
-  private int[][] patternTable = new int[2][4096];
-
-  private int[][] patternTable0;
-  private int[][] patternTable1;
+  private final int[][] nameTable = new int[2][2048];
+  private final int[] paletteTable = new int[32];
+  private final int[][] patternTable = new int[2][4096];
 
   // Registers
-  private ControlRegister control = new ControlRegister();
-  private MaskRegister mask = new MaskRegister();
-  private StatusRegister status = new StatusRegister();
-  private LoopyRegister vramAddress = new LoopyRegister();
-  private LoopyRegister tramAddress = new LoopyRegister();
-  private Sprite[] oam = new Sprite[64];
-  private Sprite[] secondaryOam = new Sprite[8];
+  private final ControlRegister control = new ControlRegister();
+  private final MaskRegister mask = new MaskRegister();
+  private final StatusRegister status = new StatusRegister();
+  private final LoopyRegister vramAddress = new LoopyRegister();
+  private final LoopyRegister tramAddress = new LoopyRegister();
+
+  // Sprites
+  private final Sprite[] oam = new Sprite[64];
+  private final Sprite[] secondaryOam = new Sprite[8];
   private int spritesN = 0;
-  private int[] spriteBitsHigh = new int[8];
-  private int[] spriteBitsLow = new int[8];
+  private final int[] spriteBitsHigh = new int[8];
+  private final int[] spriteBitsLow = new int[8];
   private boolean spriteZeroFlag = false;
   private boolean renderingSpriteZero = false;
 
+  /**
+   * Write data to the object attribute memory (OAM) of the PPU at a specific address.
+   *
+   * @param address The address to write to.
+   * @param data The data to write.
+   */
   public void writeToOam(int address, int data) {
     Sprite sprite = oam[address/4];
     sprite.setByte(address, data);
   }
 
+  // Backgrounds
   private int fineX = 0x00;
   private int bgNextTileId = 0x00;
   private int bgNextTileAttrib = 0x00;
@@ -66,7 +71,7 @@ public class PPU {
   public boolean ready = false;
 
   // Color palette containing 64 colors (10 of them are just black (0x000000))
-  private int[] colorPalette2 = new int[] {
+  private final int[] colorPalette = new int[] {
       0x545454, 0x001E74, 0x081090, 0x300088, 0x440064, 0x5C0030, 0x540400, 0x3C1800,
       0x202A00, 0x083A00, 0x004000, 0x003C00, 0x00323C, 0x000000, 0x000000, 0x000000,
       0x989698, 0x084CC4, 0x3032EC, 0x5C1EE4, 0x8814B0, 0xA01464, 0x982220, 0x783C00,
@@ -77,19 +82,6 @@ public class PPU {
       0xCCD278, 0xB4DE78, 0xA8E290, 0x98E2B4, 0xA0D6E4, 0xA0A2A0, 0x000000, 0x000000
   };
 
-  private int[] colorPalette = new int[] {
-      0x545454, 0x001E74, 0x081090, 0x300088, 0x440064, 0x5C0030, 0x540400, 0x3C1800,
-      0x202A00, 0x083A00, 0x004000, 0x003C00, 0x00323C, 0x000000, 0x000000, 0x000000,
-      0x989698, 0x084CC4, 0x3032EC, 0x5C1EE4, 0x8814B0, 0xA01464, 0x982220, 0x783C00,
-      0x545A00, 0x287200, 0x087C00, 0x007628, 0x006678, 0x000000, 0x000000, 0x000000,
-      0xECEEEC, 0x4C9AEC, 0x787CEC, 0xB062EC, 0xE454EC, 0xEC58B4, 0xEC6A64, 0xD48820,
-      0xA0AA00, 0x74C400, 0x4CD020, 0x38CC6C, 0x38B4CC, 0x3C3C3C, 0x000000, 0x000000,
-      0xECEEEC, 0xA8CCEC, 0xBCBCEC, 0xD4B2EC, 0xECAEEC, 0xECAED4, 0xECB4B0, 0xE4C490,
-      0xCCD278, 0xB4DE78, 0xA8E290, 0x98E2B4, 0xA0D6E4, 0xA0A2A0, 0x000000, 0x000000
-  };
-
-
-  private int count = 0;
   private boolean nmi = false;
 
   public int[][] pixels = new int[ScreenNES.NES_WIDTH][ScreenNES.NES_HEIGHT];
@@ -99,7 +91,7 @@ public class PPU {
   private int whichByte = 0;
   private int buffer = 0;
 
-  public int oamAddress = 0x00;
+  private int oamAddress = 0x00;
 
   public int cpuRead(int address) {
     if (CPU.instance.enableLogs) {
@@ -107,40 +99,33 @@ public class PPU {
     }
     int data = 0;
     switch (address) {
-      case 0x0000: {
+      case 0x0000:
         // Control
         break;
-      }
-      case 0x0001: {
+      case 0x0001:
         // Mask
         break;
-      }
-      case 0x0002: {
+      case 0x0002:
         // Status
         data = (status.value & 0xE0) | (buffer & 0x1F);
         status.setVerticalBlank(false);
         whichByte = 0;
         break;
-      }
-      case 0x0003: {
+      case 0x0003:
         // OAM Address
         break;
-      }
-      case 0x0004: {
+      case 0x0004:
         // OAM Data
         Sprite sprite = oam[oamAddress / 4];
         data = sprite.getByte(oamAddress);
         break;
-      }
-      case 0x0005: {
+      case 0x0005:
         // Scroll
         break;
-      }
-      case 0x0006: {
+      case 0x0006:
         // PPU Address
         break;
-      }
-      case 0x0007: {
+      case 0x0007:
         // PPU Data
         data = buffer;
         buffer = ppuRead(vramAddress.value);
@@ -153,7 +138,6 @@ public class PPU {
           vramAddress.value += 32;
         }
         break;
-      }
     }
 
     return data;
@@ -164,34 +148,29 @@ public class PPU {
       CPU.log("CPU write: " + address + " " + data + "\n");
     }
     switch (address) {
-      case 0x0000: {
+      case 0x0000:
         // Control
         control.write(data);
         tramAddress.setNametableX(control.getNametableX());
         tramAddress.setNametableY(control.getNametableY());
         break;
-      }
-      case 0x0001: {
+      case 0x0001:
         // Mask
         mask.write(data);
         break;
-      }
-      case 0x0002: {
+      case 0x0002:
         // Status
         break;
-      }
-      case 0x0003: {
+      case 0x0003:
         // OAM Address
         oamAddress = data;
         break;
-      }
-      case 0x0004: {
+      case 0x0004:
         // OAM Data
         Sprite sprite = oam[oamAddress / 4];
         sprite.setByte(oamAddress, data);
         break;
-      }
-      case 0x0005: {
+      case 0x0005:
         // Scroll
         if (whichByte == 0) {
           fineX = data & 0x07;
@@ -203,8 +182,7 @@ public class PPU {
           whichByte = 0;
         }
         break;
-      }
-      case 0x0006: {
+      case 0x0006:
         // PPU Address
         if (whichByte == 0) {
           tramAddress.value = ((data & 0x3F) << 8) | (tramAddress.value & 0x00FF);
@@ -215,8 +193,7 @@ public class PPU {
           whichByte = 0;
         }
         break;
-      }
-      case 0x0007: {
+      case 0x0007:
         // PPU Data
         ppuWrite(vramAddress.value, data);
         if (control.getIncrementMode() == 0) {
@@ -227,9 +204,7 @@ public class PPU {
         if (vramAddress.value > 0xFFFF) {
           vramAddress.value = vramAddress.value & 0xFFFF;
         }
-
         break;
-      }
     }
   }
 
@@ -261,25 +236,19 @@ public class PPU {
       }
 
       // Single-screen mirroring
-      else if (rom.getMirror() == MirroringMode.ONESCREENLOW) {
+      else if (rom.getMirror() == MirroringMode.SINGLESCREENLOW) {
         return nameTable[0][address & 0x03FF];
       }
 
-      else if (rom.getMirror() == MirroringMode.ONESCREENHIGH) {
+      else if (rom.getMirror() == MirroringMode.SINGLESCREENHIGH) {
         return nameTable[1][address & 0x03FF];
       }
     }
     // Palette memory
     else {
       address &= 0x001F;
-      if (address == 0x0010) {
-        address = 0x0000;
-      } else if (address == 0x0014) {
-        address = 0x0004;
-      } else if (address == 0x0018) {
-        address = 0x0008;
-      } else if (address == 0x001C) {
-        address = 0x000C;
+      if (address % 4 == 0) {
+        address &= 0x000F;
       }
       return paletteTable[address] & (mask.getGrayscale() != 0 ? 0x30 : 0x3F);
     }
@@ -313,42 +282,54 @@ public class PPU {
         nameTable[bit][address & 0x03FF] = data;
       }
 
-      else if (rom.getMirror() == MirroringMode.ONESCREENLOW) {
+      else if (rom.getMirror() == MirroringMode.SINGLESCREENLOW) {
         nameTable[0][address & 0x03FF] = data;
       }
 
-      else if (rom.getMirror() == MirroringMode.ONESCREENHIGH) {
+      else if (rom.getMirror() == MirroringMode.SINGLESCREENHIGH) {
         nameTable[1][address & 0x03FF] = data;
       }
     }
     // Palette memory
     else {
       address &= 0x001F;
-      if (address == 0x0010) {
-        address = 0x0000;
-      } else if (address == 0x0014) {
-        address = 0x0004;
-      } else if (address == 0x0018) {
-        address = 0x0008;
-      } else if (address == 0x001C) {
-        address = 0x000C;
+      if (address % 4 == 0) {
+        address &= 0x000F;
       }
       paletteTable[address] = data;
     }
   }
 
+  /**
+   * Add a reference to the ROM currently loaded.
+   *
+   * @param rom The ROM to add.
+   */
   public void addROM(ROM rom) {
     this.rom = rom;
   }
 
+  /**
+   * Getter for the nmi variable.
+   *
+   * @return The current value of the nmi variable.
+   */
   public boolean getNonMaskableInterrupt() {
     return nmi;
   }
 
+  /**
+   * Setter for the nmi variable.
+   *
+   * @param val The new value of the nmi variable.
+   */
   public void setNonMaskableInterrupt(boolean val) {
     nmi = val;
   }
 
+  /**
+   * Perform one PPU clock cycle.
+   */
   public void clock() {
     if (CPU.instance.enableLogs)  {
       CPU.log("PPU clock with X: " + currentX + " and Y: " + currentY + "\n");
@@ -572,66 +553,13 @@ public class PPU {
 
   private boolean oddFrame;
 
-
   private void drawPixel(int x, int y, int color) {
     if (x >= 0 && x < ScreenNES.NES_WIDTH && y >= 0 && y < ScreenNES.NES_HEIGHT) {
       pixels[x][y] = color;
     }
   }
 
-  /**
-   * Get an updated pattern table.
-   *
-   * @param i Pattern table number
-   * @param palette Palette number
-   * @return Updated pattern table
-   */
-  public int[][] getPatternTable(int i, int palette) {
-    // Pattern table to be returned
-    int [][] patternTable = new int[256][256];
-
-    // Least and most significant bits for each pixel
-    int lsb;
-    int msb;
-
-    int offset;
-    int base;
-
-    for (int x = 0; x < 16; x++) {
-      for (int y = 0; y < 16; y++) {
-        offset = y * 256 + x * 16;
-
-        for (int row = 0; row < 8; row++) {
-          base = i * 0x1000 + offset + row;
-          lsb = ppuRead(base);
-          msb = ppuRead(base + 0x0008);
-
-          for (int col = 0; col < 8; col++) {
-            int pixel = (msb & 0x01) << 1 | (lsb & 0x01);
-            lsb >>= 1;
-            msb >>= 1;
-
-            int x_pos = x * 8 + 7 - col;
-            int y_pos = y * 8 + row;
-            int color = getPaletteColor(palette, pixel);
-
-            patternTable[x_pos][y_pos] = color;
-          }
-        }
-
-      }
-    }
-
-    if (i == 0) {
-      patternTable0 = patternTable;
-    } else {
-      patternTable1 = patternTable;
-    }
-    return patternTable;
-  }
-
   private int getPaletteColor(int palette, int pixel) {
-    //System.out.println(palette + " " + pixel);
     int val = ppuRead(0x3F00 + palette * 4 + pixel);
     return colorPalette[val & 0x3F];
   }
@@ -1014,7 +942,9 @@ public class PPU {
 
   private void prepareBackground(int step) {
     assert step >= 0 && step <= 7;
-    CPU.log("Preparing background for step: " + step + "\n");
+    if (CPU.instance.enableLogs)  {
+      CPU.log("Preparing background for step: " + step + "\n");
+    }
     if (step == 0) {
       loadBackgroundShifters();
       bgNextTileId = ppuRead(0x2000 | (vramAddress.value & 0x0FFF));
@@ -1040,6 +970,9 @@ public class PPU {
     }
   }
 
+  /**
+   * Reset the PPU.
+   */
   public void reset() {
     fineX = 0;
     whichByte = 0;
@@ -1066,9 +999,4 @@ public class PPU {
     int reversed = Integer.reverse(number);
     return reversed >>> 24;
   }
-
-
-
-
-
 }
