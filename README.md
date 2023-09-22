@@ -26,6 +26,7 @@
  * Mapper 7 (AxROM) : Battletoads (Contains visual glitches), Wizards & Warriors
 
 ## To do:
+* Save and load state
 * Add sounds
 * Additional mappers later
 
